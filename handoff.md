@@ -6,9 +6,11 @@ Prepared October 25, 2026, Asia/Manila.
 
 ## Start here
 
+The authorized three-screen presentation is now implemented locally: dedicated sign-in, checkout with pending recovery, and a paid-state-gated receipt with transaction/payout details, copy, print and explorer actions. It preserves the existing payment endpoints and safeguards. Run `npm run check`; the latest run passed 17 web, 29 API/payment and 22 SQL checks plus both builds. Visual receipt/checkout previews use explicitly labeled static sample data and are not payment evidence. Next: finish the Render binding repair tracked in MASTER.md, deploy the current source and rehearse one user-approved Freighter payment. No screen-work payment was signed or submitted.
+
 **Current authorization: implement the payment-first presentation feature.** The latest user direction supersedes the earlier planning-only hold for this scope. The full marketplace build and second project remain deferred. Configure actual public deployments only within the user's deployment instructions.
 
-Earlier milestones: profile migrations and shared-login guidance were created first. Shared sign-in and the protected profile API have since been implemented as part of payment checkout. The user reports applying the database setup; the last live read is blocked by the API key type rather than missing tables.
+Earlier milestones: profile migrations and shared-login guidance were created first. Shared sign-in and the protected profile API have since been implemented as part of payment checkout. Database setup and local server-secret access were confirmed; the older API-key blocker was resolved. Hosted API readiness is tracked separately in MASTER.md.
 
 Read [MASTER.md](MASTER.md) at the start of every turn, as instructed by [AGENTS.md](AGENTS.md). Then read the relevant parts of [the detailed MVP requirements](output/BAYANIHAN-4-hour-requirements.md). This handoff summarizes the conversation and the starting point for a future work session. The latest explicit user instructions and current master brief govern any later changes.
 

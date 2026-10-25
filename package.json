@@ -14,7 +14,8 @@
     "dev:web": "npm run dev --workspace @bayanihan/web",
     "typecheck": "npm run typecheck --workspaces",
     "build": "npm run build --workspaces",
-    "test": "npm run test --workspace @bayanihan/api",
+    "test": "npm run test:web && npm run test --workspace @bayanihan/api",
+    "test:web": "TSX_TSCONFIG_PATH=apps/web/tsconfig.json node --import tsx --test apps/web/src/lib/api.test.ts apps/web/src/screens/*.test.tsx",
     "test:db": "node scripts/test-db.mjs",
     "check": "npm run typecheck && npm test && npm run test:db && npm run build"
   },

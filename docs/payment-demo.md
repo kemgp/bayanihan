@@ -2,6 +2,16 @@
 
 The current release focuses on a standalone Testnet checkout. Booking, worker job actions and physical completion are outside this increment. Furniture assembly is a presentation example; the Freighter/Paiflow payment is real Testnet execution when signed by the user.
 
+## Three presentation screens
+
+The application now has three connected views using the supplied logos and blue palette:
+
+- **Sign-in:** shared Supabase account form, password visibility control, session restoration, sign-out and account retry states. A worker account receives a customer-checkout explanation.
+- **Checkout:** editable amount and exact 85/15 preview, deployment recipients, Freighter connection, preparation, signing countdown, submission and saved pending recovery. A local countdown never permits a replacement charge; the server must establish a terminal outcome.
+- **Receipt:** shown only for a saved paid attempt with matching receipt metadata. Includes total and both shares, full payer/recipient addresses, transaction ID, ledger, verification time in PHT, Testnet explorer link, copy/print controls and an explicit new-payment action. Reload restores the current receipt; a receipt-history list is deferred.
+
+View selection follows authenticated account and saved payment state. There is no public receipt-demo route or client success toggle. Screen fixtures in automated tests do not establish live settlement. For isolated visual review, run `npm run build`, then `TSX_TSCONFIG_PATH=apps/web/tsconfig.json node --import tsx scripts/render-screen-review.mjs`. It writes static, clearly labeled sample screens to `/private/tmp/bayanihan-screen-review`; it does not use credentials, call payment APIs or sign transactions. These files are outside the production build.
+
 ## Setup
 
 1. Use Node 22.22.2 and run `npm ci` if dependencies are missing.
@@ -14,8 +24,8 @@ The current release focuses on a standalone Testnet checkout. Booking, worker jo
 
 ## Two-minute presentation
 
-1. Open BAYANIHAN. Enter a payment amount, for example 2.5 XLM. Show the live 2.125-XLM worker / 0.375-XLM platform breakdown. The footer must report the Paiflow connection. Expand **Payment recipients & verification** to show the deployed wallets.
-2. Sign in with the customer account. Supabase handles the password and session; Express reads the protected profile.
+1. Open BAYANIHAN and sign in with the customer account. Supabase handles the password and session; Express reads the protected profile and restores any current payment.
+2. In checkout, enter an amount, for example 2.5 XLM. Show the live 2.125-XLM worker / 0.375-XLM platform breakdown. The payment card must report the Paiflow connection. Expand **View payment recipients** to show the deployed wallets. An existing attempt keeps its saved amount locked until resolved.
 3. Click **Connect Freighter** and approve access. Click **Prepare payment**. This simulates/prepares without moving funds.
 4. Click **Sign & pay 2.50 XLM** (the label follows the saved amount). The user reviews the transaction and additional fee in Freighter and approves the signature. The application submits the identical saved envelope through Paiflow.
 5. The pending screen checks the original transaction up to six times, five seconds apart. **Check payment status** remains available afterward.
