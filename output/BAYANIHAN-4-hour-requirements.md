@@ -2,6 +2,12 @@
 
 Prepared October 25, 2026, Asia/Manila. Deliverable: an implementation specification for a hackathon prototype.
 
+## Current increment: payment presentation
+
+Latest user direction: prioritize payment through Paiflow and Freighter as the core feature to present. The current increment is a standalone authenticated 1-XLM Testnet checkout with 85/15 distribution, durable attempts, exact transfer verification and recovery. Booking, discovery and worker lifecycle UI are deferred to a later increment. The full marketplace requirements below remain the product target; they are not all acceptance criteria for this reduced increment.
+
+Use the existing customer Auth account and protected profile. The service/physical-completion example is explicitly simulated. Store standalone attempts in the new server-only `demo_payments` table rather than fabricating completed bookings. Bind recipients to the configured deployment's live splitter and snapshot them per attempt. Keep one active demo per customer; starting another requires a terminal original outcome. Preserve all original-envelope, trusted-price, role/ownership and payout-evidence safeguards. See [payment demo guide](../docs/payment-demo.md) for implemented endpoints and rehearsal steps.
+
 ## 1. Product and scope
 
 BAYANIHAN lets a customer book a local skilled worker, confirm completed work, and pay through Freighter and Paiflow. Each payment sends 85% to the worker and 15% to BAYANIHAN.
@@ -19,22 +25,25 @@ The supplied pitch deck identifies trust concerns, slow access to help, inconsis
 | Frontend | React.js with Vite, ordinary CSS or an existing component library |
 | Backend | Express.js on Node.js, ESM modules |
 | Database | PostgreSQL hosted by Supabase |
-| Authentication | Supabase Auth with pre-created customer and worker accounts |
+| Authentication | One shared login screen backed by Supabase Auth; pre-created customer and worker accounts for the MVP |
 | Wallet | Freighter browser extension through `@stellar/freighter-api` |
 | Payments | `@paiflow/sdk@0.2.0` on the Express server, Stellar SDK for envelope checks |
 | Runtime | Node `>=22.22.2 <23`, as required by the checked Paiflow SDK documentation |
+| Hosting | Vercel for React, Render for Express; Supabase for PostgreSQL and Auth |
 
 Use the provided wide `Bayanihan Logo.png` in the header/login screen and the provided `4.svg` hand symbol for compact branding. Copies are in `assets/branding/`. Preserve artwork proportions and colors, provide descriptive alt text, and use blue accents consistent with the originals. Do not redraw the logos.
+
+Deploy both services from the repository root to retain the npm workspace lockfile and shared TypeScript config. Configure the frontend API origin at build time and the backend's exact allowed browser origin at runtime. Render must bind to `0.0.0.0` using its supplied `PORT`. Keep Supabase server secrets and Paiflow credentials exclusively on Render. See [deployment settings](../docs/deployment.md). Hosting the scaffold does not establish completion of the application or its payment flow.
 
 The current user-specified stack takes precedence over older project notes and technology images in the deck. Paiflow's Next.js starter is a reference for payment logic. Port that logic into Express and React. [Paiflow SDK](https://github.com/artisam-paiflow/paiflow/blob/develop/packages/sdk/README.md), [payment reference](https://github.com/artisam-paiflow/paiflow-hackathon-starter).
 
 ## 3. Functional requirements and acceptance criteria
 
-All requirements below are mandatory for the selected MVP.
+The following table describes the complete marketplace target. For the current payment presentation, apply FR-06 through FR-08, persistent payment/receipt recovery from FR-09/FR-10, and the sign-in/role protections from FR-01. Booking linkage is deferred as stated above.
 
 | ID | Requirement | Acceptance criterion |
 | --- | --- | --- |
-| FR-01 | Customer and worker login | Each seeded account signs in through Supabase Auth. Express verifies its token and reads its server-controlled role. A customer cannot use worker actions. |
+| FR-01 | Shared customer and worker login | Both roles use one email/password login screen backed by Supabase Auth. Express verifies the access token and reads the protected profile role; the UI opens the corresponding customer or worker experience. No role selector grants access. Restore valid sessions on reload, support sign-out, and return to login when renewal fails. Invalid credentials show a clear error. A customer cannot use worker actions. |
 | FR-02 | Service and worker discovery | Customer sees the active service, scope, duration, service area, worker profile and 1-XLM demo price. Show a demo-profile label. Do not claim identity/background verification. |
 | FR-03 | Booking request | Customer chooses an available slot and enters a short task description and demo address. Server creates a durable booking with the trusted service price. Missing fields and occupied slots are rejected. |
 | FR-04 | Worker job actions | Assigned worker sees incoming bookings, accepts a request, and marks accepted work done. Server rejects actions from other users or out-of-order transitions. |
@@ -46,6 +55,8 @@ All requirements below are mandatory for the selected MVP.
 | FR-10 | Payment recovery | Repeated clicks, reloads or a lost submission response recover the original payment attempt. Pending/unknown outcomes stay pending and block a replacement charge. Wallet rejection never displays payment success. |
 
 Use four simple views: login, service/profile with booking form, role-specific booking list/detail, and checkout/receipt. Avoid separate pages for every step. Provide loading, empty and error states, readable contrast, labeled fields and a layout that remains usable at 390px and desktop widths. The payment demonstration targets a desktop browser with Freighter installed.
+
+The user confirmed one shared login screen with Supabase handling authentication. React submits credentials directly through the Supabase browser SDK (`signInWithPassword`); Supabase manages passwords and sessions. Send the session access token to Express as a bearer token for protected application requests. Express verifies identity and enforces role/ownership permissions using trusted records. Show a loading state while restoring the session and resolving the profile; a missing or invalid profile must not grant access. Use the existing pre-created-account MVP approach; public onboarding remains deferred. Connect Freighter during checkout, after application sign-in. [Supabase password sign-in](https://supabase.com/docs/reference/javascript/auth-signinwithpassword), [server user verification](https://supabase.com/docs/reference/javascript/auth-getuser).
 
 ## 4. Booking and payment rules
 

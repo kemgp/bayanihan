@@ -9,7 +9,7 @@ export function requireAuth(client: SupabaseClient | null): RequestHandler {
       return;
     }
     if (!client) {
-      response.status(503).json({ error: { code: 'AUTH_NOT_CONFIGURED', message: 'Authentication is not configured.' } });
+      response.status(503).json({ error: { code: 'AUTH_NOT_CONFIGURED', message: 'Configure a Supabase server secret key in the API environment, then restart the API.' } });
       return;
     }
     const { data, error } = await client.auth.getUser(match[1]);

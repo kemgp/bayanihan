@@ -23,10 +23,15 @@ The business model takes a **15% commission per completed job**. The worker rece
 | Demo scope | One service, one worker, one area and fixed appointment slots | Proposed scope in the requirements |
 | Demo service | Furniture assembly, labor only | Proposed scope in the requirements |
 | Demo price/network | 1 Stellar Testnet XLM | Proposed scope in the requirements |
-| Identity/auth | Pre-created customer and worker accounts with Supabase Auth | Proposed implementation approach |
+| Identity/auth | One shared login screen for customers and workers; Supabase Auth handles authentication. Use pre-created accounts for the MVP and route by the protected profile role after sign-in. | Shared screen and Supabase Auth confirmed by user; pre-created accounts remain the proposed MVP approach |
 | Client/server | React with Vite and Express with ESM | Proposed implementation approach |
+| Hosting | Vercel for the React frontend; Render for the Express API; Supabase remains the database/Auth provider | User deployment decision |
 
 The solo four-hour target starts from the existing scaffold and depends on available accounts, a Supabase project, funded testnet wallets and a working Paiflow deployment early in the build. It is a stretch target, not evidence that these dependencies exist or a guarantee of completion. Use a sequential schedule and a minimal interface. Do not assume three people can implement frontend, backend and payments concurrently. Keep the second project's code, configuration and work outside this workspace. New user directions may revise the proposed choices.
+
+## Current delivery priority
+
+The user explicitly prioritized Paiflow + Freighter payment as the core presentation feature. Implement the standalone authenticated Testnet checkout first; defer booking and worker lifecycle screens. Furniture assembly and physical completion are simulated in this increment and labeled accordingly. Preserve the full marketplace journey below as the later product direction.
 
 ## MVP journey
 
@@ -59,11 +64,15 @@ Payment occurs after completion and distributes immediately. Escrow and automati
 
 React calls Express application endpoints. Express verifies Supabase Auth tokens, enforces business rules, persists records in Supabase PostgreSQL and calls the Paiflow SDK. The browser uses Freighter for signing.
 
+Authentication uses one shared email/password login screen backed by the Supabase browser SDK. Supabase manages credentials and sessions. After authentication, Express verifies the access token and loads the protected profile role to select the customer or worker experience. Do not let users choose their authorization role at login. Restore sessions on reload, support sign-out, and return to login when the session cannot be renewed. Freighter connection belongs to checkout.
+
 Minimum records: `profiles`, `workers`, `services`, `bookings`, `payment_attempts`. Enforce slot uniqueness, one active payment attempt per booking, and unique transaction hashes. Enable RLS on exposed tables. Prevent browser writes to payment state and protected roles. Server-secret access requires explicit server authorization checks.
 
 Integration baseline checked while preparing the requirements: `@paiflow/sdk@0.2.0`, Node `>=22.22.2 <23`, `@stellar/freighter-api` and Stellar SDK envelope validation. Recheck relevant documentation before changing version-sensitive integration code. The SDK uses existing deployments. Configure the flow in Paiflow separately. The Next.js payment starter supplies reference logic to adapt into the requested stack.
 
 ## Delivery and verification
+
+The current payment presentation increment takes priority over the original full-marketplace schedule below. Its completion evidence is a real in-app Freighter signature, exact 85/15 transfers, persistent receipt and interruption/duplicate protection; booking acceptance remains a later milestone.
 
 Prioritize a working payment baseline, then durable booking, role-based job actions, integrated checkout, exact payout verification and recovery. Reserve the last part of the four-hour window for integration fixes and rehearsal.
 
@@ -75,26 +84,32 @@ Defer public onboarding, multiple payment-enabled workers, chat, maps/GPS, revie
 
 ## Current status
 
-- Completed: scoped requirements, original logos, persistent project context and an npm-workspace scaffold using TypeScript.
-- Frontend: `apps/web` contains a React/Vite shell with original branding, API health display, browser Supabase client and reserved feature folders.
-- Backend: `apps/api` contains Express startup/configuration, health endpoint, safe errors, token-verification middleware and server Supabase/Paiflow factories. Business endpoints deliberately return unfinished/unconfigured statuses. Role/ownership rules and payment execution remain unimplemented.
-- Database: initial migration defines the five MVP tables, constraints and restrictive RLS/access defaults. It has not been applied or verified against a Supabase database. Demo seeding is documented and not executed.
-- Verification: strict application type checks, six API boundary tests and both production builds passed. The local frontend displayed “API connected.” Dependency installation reported zero audit vulnerabilities after updating the development runner. No live wallet/payment or database integration has been verified.
-- Unconfirmed dependencies: Supabase configuration, seeded users, Paiflow deployment/token, funded wallets and testnet payout rehearsal.
-- Current task: planning only, following the user's instruction not to start implementation yet. Solo staffing and the dedicated BAYANIHAN four-hour budget are confirmed. Full booking/payment implementation and deployment remain future work.
-
-Update this section when work actually changes. Keep planned work and observed results distinct.
+- Deployment direction: frontend on Vercel, API on Render, database/Auth on Supabase. Follow `docs/deployment.md`. No hosted URLs or successful deployment checks have been supplied or verified.
+- Implemented payment-first React checkout: shared Supabase email/password sign-in, restored sessions/local sign-out, protected profile lookup, customer-only checkout, Freighter network/account guards, Paiflow preparation/submission, pending recovery and receipt UI. Worker sign-in explains that payment requires the customer account. Booking/service endpoints remain unfinished.
+- Express payment module reads the configured deployment's live on-chain splitter mapping, fixes the charge at 1 Testnet XLM, persists preparations and original signed envelopes in Supabase before submission, validates original hashes/signatures, atomically prevents duplicate initial submissions, and verifies exact native-XLM transfers from the original included transaction.
+- Added migration `20261025000300_payment_demo.sql`: isolated `demo_payments` storage with one active attempt per customer, unique transaction hashes, fixed network/asset/amounts, RLS and server-only grants. It does not represent actual bookings or modify account roles. Initial schema/profile-trigger migrations and separate demo profile seed remain in place.
+- Recovery: reload restores the same attempt; pending/unknown blocks replacement. Bounded polling and explicit status checks reconcile the original hash. Explicit retry resubmits the identical saved envelope. New demos require paid/failed/covered-expiry finality; crashed unexposed preparations can be closed after a grace period.
+- Verification: strict type checks, 20 API/payment tests, 17 isolated PostgreSQL checks and both production builds passed. Browser inspection showed the new branded checkout and a live Paiflow-ready indicator. A live 1-XLM preparation passed payer/contract/amount/network/hash/expiry checks without signing or submitting. Browser-build credential guards rejected a dummy server secret, and the production bundle contained no configured server secrets. A prior public transaction's native token events confirmed the deployed transfer path/split at that transaction's amount; this is not an in-app demo receipt.
+- Configuration: Paiflow capabilities and live splitter reads passed on Testnet. The API environment initially contained the browser publishable Supabase key; protected reads returned 401/42501. The user reports updating the key and applying migration 003. A subsequent check finds `demo_payments` present but the saved API key still publishable, so protected reads remain blocked. Never expose credentials while rechecking. Express now rejects publishable keys for the admin client.
+- Remaining presentation dependencies: save a valid Supabase server secret in the API environment, recheck protected profiles/storage, and rehearse an actual Freighter-signed in-app Testnet payment. No agent wallet signature or live submission has occurred. Booking-linked payment remains deferred.
+- Original logos, requirements, persistent context and earlier six-screen simulated mockups are preserved. The current payment interface uses the blue palette; wider marketplace screens remain concepts.
+- Current task: payment is the authorized priority. See [payment demo setup and script](docs/payment-demo.md). Do not resume the full marketplace build or touch the second project unless requested.
 
 ## Local development
 
 - Run `nvm use`, `npm ci`, then `npm run dev` from the root. Use npm and the root `package-lock.json` consistently.
 - Web: `http://127.0.0.1:5174`. API: `http://127.0.0.1:3002/api/health`. These defaults avoid other projects already using ports 5173 and 3001.
-- Verification: `npm run check` runs application type checks, API tests and production builds.
-- Configuration templates: `apps/web/.env.example` for public browser settings and `apps/api/.env.example` for server settings. Local `.env` files are ignored. The scaffold starts without credentials.
+- Verification: `npm run check` runs application type checks, API tests, isolated PostgreSQL migration/seed checks and production builds. `npm run test:db` runs only the local SQL checks without loading credentials or contacting Supabase.
+- Configuration templates: `apps/web/.env.example` for public browser settings and `apps/api/.env.example` for server settings. Local `.env` files were created with Git ignore rules and owner-only permissions. Supabase and Paiflow values are filled, but the API key must be a server secret rather than a browser publishable key. Startup without credentials remains supported.
 - See [README.md](README.md) for setup and commands, and [database notes](supabase/README.md) before applying migrations.
 
 ## Reference map and precedence
 
+- [Payment presentation guide](docs/payment-demo.md): current scope, setup, demo script, original-transaction verification, recovery and remaining live checks.
+
+- [Authentication setup and implementation](docs/auth-implementation.md): migration/seed order and explanations for shared sign-in, protected role lookup, session restoration and sign-out.
+- [Deployment guide](docs/deployment.md): Vercel frontend and Render API configuration.
+- [Conversation handoff](handoff.md): consolidated context, proposed color palette, current scaffold, solo delivery plan and remaining dependencies. The palette remains a recommendation pending user direction.
 - [Detailed MVP requirements](output/BAYANIHAN-4-hour-requirements.md): functional acceptance criteria, API/data details and schedule.
 - [Wide logo](<assets/branding/Bayanihan Logo.png>) and [hand symbol](assets/branding/4.svg): original copied branding assets.
 - [Pitch deck](</Users/keitherwinmikhail/Downloads/Pitch Deck.deck>): primary product/business source. This external path may be unavailable on another machine.

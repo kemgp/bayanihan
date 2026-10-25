@@ -1,2 +1,4 @@
 -- Intentionally empty. No fabricated Auth users, wallet addresses or deployments.
--- See README.md here for the manual development seed sequence.
+-- Demo role assignment is an explicit step in seeds/demo_profiles.sql after Auth user creation.
+-- Keeping it out of automatic seeding avoids applying project-specific role changes on reset.
+-- See README.md here for the development setup sequence.

@@ -3,6 +3,7 @@ import test from 'node:test';
 import request from 'supertest';
 import { createApp } from './app.js';
 import { readEnv } from './config/env.js';
+import { isSupabaseServerKey } from './lib/supabase.js';
 
 const app = createApp(readEnv({}));
 
@@ -34,4 +35,12 @@ test('malformed JSON returns a safe client error', async () => {
 
 test('mainnet configuration is rejected', () => {
   assert.throws(() => readEnv({ STELLAR_NETWORK: 'public' }), /Testnet/);
+});
+
+test('Supabase admin client rejects publishable and legacy anon keys', () => {
+  const jwt = (role: string) => `e30.${Buffer.from(JSON.stringify({ role })).toString('base64url')}.signature`;
+  assert.equal(isSupabaseServerKey('sb_publishable_demo_public_key'), false);
+  assert.equal(isSupabaseServerKey(jwt('anon')), false);
+  assert.equal(isSupabaseServerKey('sb_secret_demo_server_key'), true);
+  assert.equal(isSupabaseServerKey(jwt('service_role')), true);
 });

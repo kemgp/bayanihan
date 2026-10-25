@@ -15,9 +15,11 @@
     "typecheck": "npm run typecheck --workspaces",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspace @bayanihan/api",
-    "check": "npm run typecheck && npm test && npm run build"
+    "test:db": "node scripts/test-db.mjs",
+    "check": "npm run typecheck && npm test && npm run test:db && npm run build"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.11",
     "concurrently": "9.2.5",
     "typescript": "5.9.3"
   }
