@@ -1,0 +1,2 @@
+-- Intentionally empty. No fabricated Auth users, wallet addresses or deployments.
+-- See README.md here for the manual development seed sequence.

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#143a40">
+<title>BAYANIHAN · Idea mindmap</title>
+<style>
+  :root{color-scheme:light;--ink:#18383c;--muted:#667976;--paper:#f6f7f2;--surface:#fff;--line:#dbe3dc;--accent:#14796c;--soft:#e9f3ec;--brand:#143a40;--shadow:0 12px 40px #18383c0a}
+  *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button{font:inherit;color:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid #be7c30;outline-offset:4px}button:disabled{cursor:default;opacity:.4}[hidden]{display:none!important}h1,h2,h3,p{margin:0}a{color:var(--accent)}
+  .app{height:100dvh;min-height:620px;display:flex;flex-direction:column;overflow:hidden}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px 32px 17px;border-bottom:1px solid var(--line);background:var(--paper);z-index:2}
+  .brand{display:flex;align-items:center;gap:14px}.mark{width:41px;height:41px;border-radius:13px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:23px}.eyebrow{font-size:10px;letter-spacing:.17em;text-transform:uppercase;font-weight:650;color:var(--muted)}h1{font-size:22px;letter-spacing:-.7px;font-weight:650}.top-actions{display:flex;gap:13px;align-items:center}.planning{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}.planning:before{content:"";width:6px;height:6px;border-radius:100%;background:var(--accent)}.button{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:8px 13px;font-size:12px;font-weight:550}.button:hover{border-color:#aebfb5;background:#f0f4ec}.button.primary{background:var(--brand);color:white;border-color:var(--brand)}
+  .strip{padding:13px 32px;display:flex;justify-content:space-between;align-items:center;gap:16px}.subtitle{font-size:13px;color:var(--muted)}.view-switch{display:flex;gap:3px;padding:3px;background:#e8ede6;border-radius:9px}.view-switch button{border:0;background:transparent;padding:6px 13px;border-radius:6px;font-size:12px}.view-switch button[aria-selected="true"]{background:var(--surface);box-shadow:0 1px 4px #0000000a;color:var(--ink)}
+  .map-shell{position:relative;flex:1;min-height:260px;margin:0 16px;background-image:radial-gradient(#bccbc0 0.7px,transparent .7px);background-size:22px 22px;border-radius:16px;overflow:hidden}.stage{position:absolute;inset:0;touch-action:none;cursor:grab;overflow:hidden}.stage.dragging{cursor:grabbing}.world{position:absolute;left:0;top:0;width:2600px;height:1800px;transform-origin:0 0;will-change:transform}.connectors{position:absolute;inset:0;width:2600px;height:1800px;overflow:visible;pointer-events:none}.link{fill:none;stroke:#c7d4cb;stroke-width:1.6}.link.active{stroke:var(--accent);stroke-width:2}.link.muted{opacity:.3}
+  .node{position:absolute;transform:translate(-50%,-50%);text-align:left;background:var(--surface);border:1px solid #d8e1d7;box-shadow:var(--shadow);border-radius:12px;padding:15px 17px;width:224px;min-height:84px;transition:border-color .16s,background .16s,opacity .16s;cursor:pointer}.node:hover{border-color:#9ab2a2;background:#fbfdf8}.node .number{font-size:11px;letter-spacing:.08em;color:var(--muted);margin-right:7px}.node .name{font-size:15px;font-weight:650;letter-spacing:-.2px}.node .caption{display:block;font-size:12px;color:var(--muted);margin-top:5px}.node .expand{position:absolute;right:14px;top:15px;font-size:14px;color:var(--muted)}.node.branch{padding-right:26px}.node.branch.selected{border-color:var(--accent);background:var(--soft)}.node.branch.dimmed{opacity:.36}.node.branch.dimmed:hover,.node.branch.dimmed:focus-visible{opacity:1}
+  .node.root{width:178px;height:178px;min-height:0;background:var(--brand);color:white;border:0;border-radius:50%;text-align:center;padding:22px;box-shadow:0 15px 40px #143a401b;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px}.node.root:hover{background:#1a4950}.root .root-top{font-size:10px;letter-spacing:.17em;color:#bad9ce}.root strong{font-size:21px;letter-spacing:-.5px}.root .root-caption{font-size:12px;color:#d9e7dd;max-width:125px}.node.leaf{width:246px;min-height:68px;padding:12px 16px;box-shadow:none}.leaf .name{font-size:14px;font-weight:550}.leaf .caption{font-size:11px;margin-top:2px}.leaf.selected{border-color:var(--accent);background:var(--soft)}
+  .canvas-tools{position:absolute;left:18px;bottom:16px;display:flex;align-items:center;gap:8px;z-index:1}.zoom-tools{display:flex;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);overflow:hidden}.zoom-tools button{background:transparent;border:0;width:35px;height:35px;font-size:18px}.zoom-tools button:hover{background:var(--soft)}.zoom-tools output{min-width:49px;text-align:center;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}.canvas-tools>.button{box-shadow:var(--shadow)}.map-hint{position:absolute;right:20px;bottom:24px;font-size:11px;color:var(--muted);pointer-events:none}.crumb{position:absolute;left:20px;top:16px;font-size:11px;letter-spacing:.02em;color:var(--muted);pointer-events:none;background:var(--paper);padding:4px 8px;border-radius:5px}
+  .details{padding:20px 32px 22px;display:grid;grid-template-columns:230px minmax(0,1fr) 185px;gap:30px;align-items:start;background:var(--paper);min-height:150px;border-top:1px solid var(--line);margin-top:13px}.details h2{font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-.5px;margin-top:6px}.details-copy{font-size:13px;line-height:1.65;max-width:820px}.detail-note{font-size:11px;color:var(--muted);margin-top:7px}.detail-stat{border-left:1px solid var(--line);padding-left:20px}.split-number{font-size:28px;letter-spacing:-1px;line-height:1.2;font-weight:550}.stat-caption{font-size:11px;color:var(--muted);margin-top:4px}.outline{flex:1;overflow:auto;padding:8px 32px 32px;max-width:1280px;width:100%;margin:auto}.outline-intro{margin:10px 0 25px;max-width:750px;font-size:15px}.outline-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.outline-section{background:var(--surface);border:1px solid var(--line);padding:22px;border-radius:12px}.outline-section h2{font-size:18px;margin-bottom:7px}.outline-section>p{font-size:12px;color:var(--muted);margin-bottom:16px}.outline-section ul{list-style:none;margin:0;padding:0}.outline-section li{margin-top:13px;border-left:2px solid #cde2d4;padding-left:13px}.outline-section h3{font-size:13px;font-weight:600}.outline-section li p{font-size:12px;line-height:1.6;color:var(--muted);margin-top:3px}.outline-foot{font-size:11px;line-height:1.7;color:var(--muted);margin-top:24px}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  @media(max-width:760px){.top{padding:16px 18px}.planning{display:none}.brand{gap:10px}h1{font-size:19px}.top-actions{gap:7px}.top .button{padding:7px 10px}.strip{padding:11px 18px}.subtitle{font-size:12px;max-width:210px}.details{padding:17px 20px;grid-template-columns:150px 1fr;gap:18px;min-height:170px}.detail-stat{display:none}.details h2{font-size:17px}.details-copy{font-size:12px}.map-hint{display:none}.outline{padding:8px 18px 25px}.outline-grid{grid-template-columns:1fr}.app{min-height:600px}}
+  @media(max-width:450px){.details{display:block;min-height:170px}.details h2{margin:3px 0 8px;font-size:16px}.details .eyebrow{display:none}.mark{display:none}.subtitle{max-width:160px;font-size:11px}.view-switch button{padding:6px 9px}.button{font-size:11px}.map-shell{margin:0 8px}.detail-note{font-size:10px}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+  @media print{@page{size:A4;margin:14mm}body{background:white;color:#142e31;font-size:11px}.app{height:auto;min-height:0;overflow:visible}.top{padding:0 0 15px}.top-actions,.strip,.map-shell,.details{display:none!important}.outline{display:block!important;overflow:visible;padding:18px 0}.outline-grid{display:block}.outline-section{break-inside:avoid;page-break-inside:avoid;margin-bottom:15px;border:0;border-top:1px solid #ccc;border-radius:0;padding:15px 0}.outline-section h2{font-size:17px}.outline-section li p{font-size:11px}.outline-intro{font-size:13px}.outline-foot a{color:inherit;text-decoration:none}}
+</style>
+</head>
+<body>
+<main class="app" id="bayanihan-mindmap">
+  <header class="top">
+    <div class="brand"><div class="mark" aria-hidden="true">b</div><div><div class="eyebrow">The product idea</div><h1>BAYANIHAN <span style="font-weight:400;color:var(--muted)">/ Mindmap</span></h1></div></div>
+    <div class="top-actions"><span class="planning">Planning · Hackathon MVP</span><button type="button" class="button" id="print">Print / Save PDF</button></div>
+  </header>
+  <div class="strip"><p class="subtitle">Local handymen. Clear bookings. Verifiable payouts.</p><div class="view-switch" role="tablist" aria-label="Map view"><button type="button" id="map-tab" role="tab" aria-selected="true" aria-controls="map-view">Mindmap</button><button type="button" id="outline-tab" role="tab" aria-selected="false" aria-controls="outline-view">Outline</button></div></div>
+  <section class="map-shell" id="map-view" role="tabpanel" aria-labelledby="map-tab">
+    <div class="stage" id="stage" aria-label="Interactive mindmap. Select a branch to explore. Drag empty space to pan; use the zoom controls to change scale.">
+      <div class="world" id="world"><svg class="connectors" id="connectors" aria-hidden="true"></svg><div id="nodes"></div></div>
+    </div>
+    <div class="crumb" id="crumb">BAYANIHAN / Overview</div>
+    <div class="canvas-tools"><button type="button" class="button" id="overview">Overview</button><div class="zoom-tools" aria-label="Zoom controls"><button type="button" id="zoom-out" aria-label="Zoom out">−</button><output id="zoom-value" aria-live="off">100%</output><button type="button" id="zoom-in" aria-label="Zoom in">+</button></div><button type="button" class="button" id="fit">Fit view</button></div>
+    <p class="map-hint">Select a branch to explore · Drag to pan · Scroll to zoom</p>
+  </section>
+  <section class="outline" id="outline-view" role="tabpanel" aria-labelledby="outline-tab" hidden>
+    <p class="outline-intro"><strong>BAYANIHAN</strong> is a proposed web app for booking local handymen. Customers confirm completed work and authorize payment; Paiflow splits it between the worker and platform.</p>
+    <div class="outline-grid" id="outline-content"></div>
+    <p class="outline-foot">Basis: supplied Pitch Deck.deck, paiflow-guide.pdf, event-primer.pdf and setup-guide.pdf, plus the feasibility plan. Three contributors using AI-assisted development. October 24, 2026. Product choices are proposals; all demo payments use Stellar Testnet. Physical job completion is simulated in the demo.<br>References: <a href="https://github.com/artisam-paiflow/paiflow-hackathon-starter" target="_blank" rel="noopener">Paiflow starter</a> · <a href="https://github.com/artisam-paiflow/paiflow/blob/develop/packages/sdk/README.md" target="_blank" rel="noopener">SDK documentation</a></p>
+  </section>
+  <aside class="details" id="details" aria-label="Selected idea details"><div><div class="eyebrow" id="detail-category">The central idea</div><h2 id="detail-title">Skilled help, close to home.</h2></div><div><p class="details-copy" id="detail-copy">Book a local handyman, agree on the work and price, then pay after confirming completion. Paiflow automatically sends 85% to the worker and 15% to BAYANIHAN.</p><p class="detail-note" id="detail-note">Select any of the eight branches to see the decisions behind the idea.</p></div><div class="detail-stat"><div class="eyebrow">Proposed payment split</div><div class="split-number">85 <span style="font-size:19px;color:var(--muted)">/</span> 15</div><p class="stat-caption">Worker / BAYANIHAN<br>Testnet for the hackathon</p></div></aside>
+  <p class="sr-only" id="announcement" aria-live="polite"></p>
+</main>
+<script>
+(() => {
+  'use strict';
+  const root = document.getElementById('bayanihan-mindmap');
+  const branches = [
+    {id:'people',title:'People & problem',caption:'Who needs this, and why?',side:-1,y:-255,summary:'Start with customers and workers in one compact service area. The proposed value is easier access to dependable help, clear expectations and transparent payment.',note:'A starting hypothesis to validate with customer and worker interviews.',items:[
+      {title:'Customers',tag:'Tenants & small property managers',text:'People who need scheduled minor repairs and want to know who will arrive, what the work includes and what it will cost.'},
+      {title:'Independent workers',tag:'Local skills, more visible work',text:'Handymen need a way to show their services, receive bookings, agree to a clear scope and see exactly what they take home.'},
+      {title:'Customer pain',tag:'Trust, availability & unclear prices',text:'The deck identifies uncertainty about workers and slow access to help. The product should make identity, scope, appointment and price visible.'},
+      {title:'Worker pain',tag:'Inconsistent jobs & low visibility',text:'Give workers a discoverable profile and an organized booking history. Actual reliability still requires recruitment, screening and support.'}
+    ]},
+    {id:'services',title:'Product & services',caption:'A focused local web app',side:-1,y:-85,summary:'A responsive web app connects service discovery to a real booking. Start with a clearly scoped labor-only job; expand categories only after the core flow works.',note:'Hackathon starting scope: one service area, one service and one payment-enabled worker.',items:[
+      {title:'Discover a service',tag:'Service catalog & worker profile',text:'Show the service scope, worker identity, service area, duration and agreed price. Use clearly labeled demo profiles unless checks were actually performed.'},
+      {title:'Choose an appointment',tag:'Date, time & job description',text:'Customers request a slot and describe the job. The backend checks availability and prevents two confirmed bookings from taking the same slot.'},
+      {title:'Worker dashboard',tag:'Accept, track & complete jobs',text:'The assigned worker can accept a request, see the agreed scope and report completion. Enforce permissions on the server.'},
+      {title:'Service expansion',tag:'Plumbing, electrical, carpentry…',text:'The deck includes plumbing, electrical, carpentry, appliance repair, cleaning, painting, gardening and HVAC. Treat this as a future catalog; uncertain repairs need an approved quote.'}
+    ]},
+    {id:'journey',title:'Booking journey',caption:'From request to verified receipt',side:-1,y:85,summary:'Keep the job lifecycle separate from payment status. A worker can finish a job while payment remains unpaid or pending verification.',note:'The demo simulates physical work; a blockchain receipt proves payment, not repair quality.',items:[
+      {title:'1 · Request & agree',tag:'Customer books; worker accepts',text:'Select a worker and service, request an appointment, then agree on scope and the labor quote before the job proceeds.'},
+      {title:'2 · Complete the work',tag:'Worker reports completion',text:'The worker marks the job complete. This creates a request for the customer to review the work; it must not automatically trigger a charge.'},
+      {title:'3 · Confirm & pay',tag:'Customer explicitly signs',text:'The customer confirms completion, reviews the amount, recipients and fee, and signs the original payment in Freighter.'},
+      {title:'4 · Verify & receipt',tag:'Original transaction + both payouts',text:'The server verifies successful settlement and the exact worker/platform transfers, then marks payment paid and shows the original transaction hash.'}
+    ]},
+    {id:'business',title:'Business model',caption:'15% of completed labor',side:-1,y:255,summary:'BAYANIHAN earns a proposed 15% commission on completed labor. The worker sees an 85% net share before accepting. Gross commission must cover the platform’s variable costs.',note:'Commercial viability is unproven; validate through a small manually coordinated pilot.',items:[
+      {title:'Commission',tag:'85% worker / 15% platform',text:'Retain the deck’s proposed 15% commission per completed job. Exclude materials from the initial demo so the commission basis stays clear.'},
+      {title:'Illustrative economics',tag:'₱1,000 labor → ₱150 gross fee',text:'At an illustrative ₱1,000 labor charge, the worker receives ₱850 and the platform earns ₱150 before costs. These are arithmetic examples, not market prices or profit forecasts.'},
+      {title:'Pilot & learn',tag:'Interviews, a few workers, real jobs',text:'After the event, interview customers and workers, recruit a small local supply pool and coordinate a limited pilot. Track completion, repeat bookings, disputes and contribution per job.'},
+      {title:'Commercial questions',tag:'Trust, retention & spendable pesos',text:'Validate service quality, customer acquisition cost, whether workers accept 15%, off-platform repeat bookings and how ordinary users will pay and receive pesos.'}
+    ]},
+    {id:'paiflow',title:'Paiflow payments',caption:'The core integration · 85/15 split',side:1,y:-255,summary:'Use a native-XLM On Receive → Split deployment. Payment executes after customer confirmation and automatically allocates the worker and platform shares.',note:'Immediate split, with no escrow in this MVP. Paying after completion leaves customer nonpayment risk.',items:[
+      {title:'Receive → Split',tag:'Configured in Paiflow',text:'Create and confirm the team’s testnet flow in the Paiflow builder. Set distinct worker and platform addresses, with 85% and 15% shares.'},
+      {title:'Customer authorization',tag:'Freighter signs in the browser',text:'Show Testnet, exact amount, recipients and network fee. The customer signs the server-prepared transaction; wallet secrets remain in Freighter.'},
+      {title:'Payout evidence',tag:'1 XLM → 0.85 + 0.15 XLM',text:'For the demo, verify that 1 testnet XLM pays 0.85 XLM to the worker and 0.15 XLM to BAYANIHAN. Fees are additional. Mark paid only after verifying both payouts.'},
+      {title:'Worker routing',tag:'Fixed recipients per deployment',text:'Map the selected worker to a trusted deployment UUID on the server. For another worker, configure and verify another deployment. Reuse it across bookings, not one per customer.'},
+      {title:'Payment recovery',tag:'Check the original transaction',text:'Retain the preparation, original signed envelope and hash. Pending status, timeouts or missing events do not authorize a new charge. Recover the original transaction.'}
+    ]},
+    {id:'tech',title:'Implementation',caption:'Reuse the working payment starter',side:1,y:-85,summary:'Build on the official Next.js/TypeScript starter. Add durable bookings, authentication, worker actions and exact receipt verification around its payment lifecycle.',note:'Supported setup from the supplied guide: Node 22.22.2–22.x, pnpm 10.4.1, SDK 0.2.0.',items:[
+      {title:'Web experience',tag:'Next.js + React + TypeScript',text:'One responsive application supplies service browsing, booking forms, customer checkout, worker controls and receipts. Keep the initial journey small and complete.'},
+      {title:'Trusted backend',tag:'Auth, pricing & booking rules',text:'Server routes verify session ownership, derive prices and deployments from stored records, enforce booking transitions and use the server-only Paiflow SDK.'},
+      {title:'Durable records',tag:'Users, workers, bookings, payments',text:'Use persistent storage for bookings and original payment evidence. SQLite fits a laptop demo; public hosting needs a compatible persistent database and storage model.'},
+      {title:'Payment integrity',tag:'Verify signed body & exact transfers',text:'Bind the order to its network, payer, amount and deployment. Compare the signed body to the saved preparation, prevent duplicate charges and verify the expected split.'},
+      {title:'macOS setup',tag:'Terminal / zsh, nvm & pnpm',text:'Use the adapted macOS guide for Git, supported Node 22, pnpm and the starter. Keep Paiflow credentials on the server. Engr/Kimi is an optional development workflow.'}
+    ]},
+    {id:'team',title:'Three people + AI',caption:'Clear owners, one shared specification',side:1,y:85,summary:'Use AI to draft code, tests, fixtures and pitch copy. Give each person a clear ownership area and integrate small changes against the same booking and payment contracts.',note:'AI-assisted development is assumed; a product chatbot or AI matching feature is not required.',items:[
+      {title:'Person 1 · Payments',tag:'Paiflow, wallet & verification',text:'Own the flow, wallet integration, transaction checks and recovery. Use AI for implementation help; humans review addresses, authorize signing and inspect live payout evidence.'},
+      {title:'Person 2 · Booking backend',tag:'Database, roles & worker actions',text:'Own durable records, slot availability, authentication, ownership checks and job transitions. Use AI for migrations, route handlers and focused failure-case tests.'},
+      {title:'Person 3 · Experience',tag:'Customer UI, pitch & demo',text:'Own the booking interface, responsive layout, presentation and demo coordination. Use AI for components, copy and fixtures, then review the complete journey.'},
+      {title:'Shared workflow',tag:'Agree contracts, integrate & rehearse',text:'Agree on schema, booking states and route inputs first. Keep payment code ownership clear, integrate frequently, and rehearse the entire live journey together.'}
+    ]},
+    {id:'hackathon',title:'Hackathon & next steps',caption:'One end-to-end proof first',side:1,y:255,summary:'Demonstrate a complete booking followed by a real testnet payment and verified payout. Finish integration before expanding the catalog or polishing secondary features.',note:'October 25, 2026 · 5¼ hours of scheduled building · 3-minute pitch/demo + 2-minute Q&A.',items:[
+      {title:'Before the event',tag:'Wallets + flow + working starter',text:'Fund testnet wallets, confirm the 85/15 deployment and prove hosted-page and SDK payments. Retain hashes and establish the integration baseline before feature work.'},
+      {title:'Hackathon MVP',tag:'Book → complete → pay → verify',text:'One service area, a fixed demo quote and one payment-enabled worker. Add persistent booking state, customer and worker controls, a verified receipt and payment recovery.'},
+      {title:'Three-minute pitch',tag:'Problem, solution, Stellar, Paiflow, demo',text:'Use the required order. Reserve about 90 seconds for the booking/payment demonstration. Keep a clearly labeled backup recording and the original hashes available.'},
+      {title:'After the hackathon',tag:'Validate demand, then expand',text:'Test the local service operation and unit economics first. Later evaluate additional verified workers, more services and real settlement. Escrow, fiat rails and automated screening need separate work.'}
+    ]}
+  ];
+  const state = {active:null,leaf:null,view:window.innerWidth<600?'outline':'map',scale:1,x:0,y:0};
+  const stage=root.querySelector('#stage'), world=root.querySelector('#world'), nodes=root.querySelector('#nodes'), svg=root.querySelector('#connectors');
+  const C={x:1300,y:900}, branchX=330, leafX=655;
+  let geometry=[],resizeTimer;
+  function node(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;}
+  function buttonNode(type,id,x,y,w,h){const b=node('button','node '+type);b.type='button';b.id=id;b.style.left=x+'px';b.style.top=y+'px';geometry.push({x,y,w,h,id});nodes.append(b);return b;}
+  function connector(ax,ay,bx,by,cls){const p=document.createElementNS('http://www.w3.org/2000/svg','path');const dx=(bx-ax)*.52;p.setAttribute('d',`M ${ax} ${ay} C ${ax+dx} ${ay}, ${bx-dx} ${by}, ${bx} ${by}`);p.setAttribute('class','link '+(cls||''));svg.append(p);}
+  function draw(){
+    nodes.replaceChildren();svg.replaceChildren();geometry=[];
+    const center=buttonNode('root','root-node',C.x,C.y,178,178);center.setAttribute('aria-label','BAYANIHAN: return to overview');center.append(node('span','root-top','The idea'),node('strong','','BAYANIHAN'),node('span','root-caption','Book local handymen. Pay with clarity.'));center.addEventListener('click',()=>selectBranch(null));
+    branches.forEach((b,i)=>{
+      const active=state.active===b.id;const bx=C.x+b.side*branchX, by=C.y+b.y;
+      connector(C.x+b.side*76,C.y,bx-b.side*112,by,active?'active':state.active?'muted':'');
+      const n=buttonNode('branch'+(active?' selected':state.active?' dimmed':''),'branch-'+b.id,bx,by,224,84);
+      n.setAttribute('aria-expanded',String(active));n.setAttribute('aria-label',b.title+', '+b.items.length+' topics. '+(active?'Collapse branch':'Explore branch'));
+      const label=node('div');label.append(node('span','number',String(i+1).padStart(2,'0')),node('span','name',b.title));n.append(label,node('span','caption',b.caption),node('span','expand',active?'−':'+'));n.addEventListener('click',()=>selectBranch(active?null:b.id));
+      if(active){
+        b.items.forEach((item,j)=>{
+          const lx=C.x+b.side*leafX, ly=by+(j-(b.items.length-1)/2)*87;
+          connector(bx+b.side*112,by,lx-b.side*123,ly,'active');
+          const l=buttonNode('leaf'+(state.leaf===j?' selected':''),'leaf-'+b.id+'-'+j,lx,ly,246,68);
+          l.setAttribute('aria-pressed',String(state.leaf===j));l.append(node('span','name',item.title),node('span','caption',item.tag));
+          l.addEventListener('click',()=>{state.leaf=j;draw();showDetails();document.getElementById(l.id)?.focus({preventScroll:true});});
+        });
+      }
+    });
+    root.querySelector('#crumb').textContent='BAYANIHAN / '+(branches.find(b=>b.id===state.active)?.title||'Overview');
+    transform();
+  }
+  function selectBranch(id){state.active=id;state.leaf=null;draw();showDetails();fitView();const focus=root.querySelector(id?'#branch-'+id:'#root-node');focus?.focus({preventScroll:true});}
+  function showDetails(){
+    const b=branches.find(b=>b.id===state.active), item=b&&state.leaf!==null?b.items[state.leaf]:null;
+    root.querySelector('#detail-category').textContent=b?b.title:'The central idea';
+    root.querySelector('#detail-title').textContent=item?item.title:b?b.title:'Skilled help, close to home.';
+    root.querySelector('#detail-copy').textContent=item?item.text:b?b.summary:'Book a local handyman, agree on the work and price, then pay after confirming completion. Paiflow automatically sends 85% to the worker and 15% to BAYANIHAN.';
+    root.querySelector('#detail-note').textContent=b?b.note:'Select any of the eight branches to see the decisions behind the idea.';
+    root.querySelector('#announcement').textContent=item?item.title+'. '+item.text:b?b.title+' expanded. '+b.items.length+' topics.': 'Mindmap overview. Eight branches.';
+  }
+  function transform(){world.style.transform=`translate(${state.x}px,${state.y}px) scale(${state.scale})`;root.querySelector('#zoom-value').value=Math.round(state.scale*100)+'%';}
+  function fitView(){
+    const rect=stage.getBoundingClientRect();if(!rect.width||!rect.height)return;
+    const focus=state.active?geometry.filter(g=>g.id==='root-node'||g.id==='branch-'+state.active||g.id.startsWith('leaf-'+state.active+'-')):geometry;
+    const minX=Math.min(...focus.map(g=>g.x-g.w/2))-45,maxX=Math.max(...focus.map(g=>g.x+g.w/2))+45;
+    const minY=Math.min(...focus.map(g=>g.y-g.h/2))-50,maxY=Math.max(...focus.map(g=>g.y+g.h/2))+75;
+    state.scale=Math.min(1.25,(rect.width-36)/(maxX-minX),(rect.height-30)/(maxY-minY));
+    state.x=rect.width/2-(minX+maxX)/2*state.scale;state.y=rect.height/2-(minY+maxY)/2*state.scale;transform();
+  }
+  function zoom(factor,cx,cy){const r=stage.getBoundingClientRect();const px=cx??r.width/2,py=cy??r.height/2;const next=Math.min(2,Math.max(.28,state.scale*factor));state.x=px-(px-state.x)*next/state.scale;state.y=py-(py-state.y)*next/state.scale;state.scale=next;transform();}
+  function setView(view){state.view=view;root.querySelector('#map-view').hidden=view!=='map';root.querySelector('#outline-view').hidden=view!=='outline';root.querySelector('#details').hidden=view!=='map';root.querySelector('#map-tab').setAttribute('aria-selected',String(view==='map'));root.querySelector('#outline-tab').setAttribute('aria-selected',String(view==='outline'));if(view==='map')requestAnimationFrame(fitView);}
+  const outline=root.querySelector('#outline-content');
+  branches.forEach((b,i)=>{const section=node('section','outline-section');section.append(node('div','eyebrow',String(i+1).padStart(2,'0')),node('h2','',b.title),node('p','',b.summary));const ul=node('ul');b.items.forEach(item=>{const li=node('li');li.append(node('h3','',item.title+' · '+item.tag),node('p','',item.text));ul.append(li);});section.append(ul);outline.append(section);});
+  root.querySelector('#map-tab').addEventListener('click',()=>setView('map'));root.querySelector('#outline-tab').addEventListener('click',()=>setView('outline'));root.querySelector('#overview').addEventListener('click',()=>selectBranch(null));root.querySelector('#fit').addEventListener('click',fitView);root.querySelector('#zoom-in').addEventListener('click',()=>zoom(1.18));root.querySelector('#zoom-out').addEventListener('click',()=>zoom(1/1.18));root.querySelector('#print').addEventListener('click',()=>window.print());
+  stage.addEventListener('wheel',e=>{e.preventDefault();const r=stage.getBoundingClientRect();zoom(Math.exp(-e.deltaY*.0012),e.clientX-r.left,e.clientY-r.top);},{passive:false});
+  const pointers=new Map();let gesture=null;
+  const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  stage.addEventListener('pointerdown',e=>{if(e.target.closest('button')||e.button>0)return;stage.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});stage.classList.add('dragging');gesture=null;});
+  stage.addEventListener('pointermove',e=>{
+    if(!pointers.has(e.pointerId))return;const old=pointers.get(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===1){state.x+=e.clientX-old.x;state.y+=e.clientY-old.y;gesture=null;transform();}
+    else{const [a,b]=[...pointers.values()];const d=distance(a,b),r=stage.getBoundingClientRect();if(gesture&&gesture>0)zoom(d/gesture,(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top);gesture=d;}
+  });
+  function release(e){pointers.delete(e.pointerId);gesture=null;if(!pointers.size)stage.classList.remove('dragging');}
+  stage.addEventListener('pointerup',release);stage.addEventListener('pointercancel',release);
+  root.addEventListener('keydown',e=>{if(e.key==='Escape'){selectBranch(null);return;}if(e.target!==stage)return;});
+  new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitView,80);}).observe(stage);
+  draw();setView(state.view);requestAnimationFrame(fitView);
+})();
+</script>
+</body>
+</html>
