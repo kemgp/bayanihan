@@ -7,6 +7,7 @@ import { MIN_STROOPS, MAX_STROOPS } from './amount.js';
 import { createPaymentGateway } from './gateway.js';
 import { createPaymentStore } from './store.js';
 import { createPaymentService, type PaymentService } from './service.js';
+import { ReadinessError } from './readiness.js';
 
 export function createPaymentRouter(config: Config, db: SupabaseClient | null, injected?: PaymentService) {
   const router = Router();
@@ -17,8 +18,10 @@ export function createPaymentRouter(config: Config, db: SupabaseClient | null, i
     try {
       const split = await (injected?.configuration() ?? gateway.configuration());
       res.json({ ready: true, network: 'testnet', minAmount: MIN_STROOPS.toString(), maxAmount: MAX_STROOPS.toString(), split });
-    } catch {
-      res.json({ ready: false, network: 'testnet', minAmount: MIN_STROOPS.toString(), maxAmount: MAX_STROOPS.toString(), message: 'Paiflow Testnet configuration is unavailable. Check the server configuration and splitter.' });
+    } catch (error) {
+      res.json({ ready: false, network: 'testnet', minAmount: MIN_STROOPS.toString(), maxAmount: MAX_STROOPS.toString(),
+        code: error instanceof ReadinessError ? error.code : 'DEPLOYMENT_NOT_READY',
+        message: error instanceof ReadinessError ? error.message : 'Paiflow Testnet configuration is unavailable. Check the server configuration and splitter.' });
     }
   });
   router.use(['/me', '/payments/demo'], requireAuth(db));

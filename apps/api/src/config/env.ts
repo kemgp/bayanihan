@@ -11,7 +11,7 @@ export function readEnv(source: NodeJS.ProcessEnv = process.env) {
   }))];
   return {
     port,
-    host: source.HOST || '127.0.0.1',
+    host: source.HOST || (source.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1'),
     webOrigins,
     supabaseUrl: source.SUPABASE_URL || '',
     supabaseSecretKey: source.SUPABASE_SECRET_KEY || '',

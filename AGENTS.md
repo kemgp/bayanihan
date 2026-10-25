@@ -4,7 +4,7 @@ These instructions apply to this workspace and its subdirectories.
 
 ## Required context for every prompt
 
-At the start of every turn, before substantive work or an answer, read the root [MASTER.md](MASTER.md). Re-read it after context compaction or when it changes. Use it as the project's current brief even when the latest prompt does not mention it. Do not require the user to repeat or attach it.
+At the start of every turn, before substantive work or an answer, read the root [MASTER.md](MASTER.md) and [handoff.md](handoff.md). Re-read them after context compaction or when they change. Use MASTER.md as the current brief and handoff.md as supporting context even when the latest prompt does not mention them. The current brief and latest user direction supersede historical sections in the handoff. Do not require the user to repeat or attach either document.
 
 For implementation or requirement changes, also read the relevant sections of [the detailed MVP requirements](output/BAYANIHAN-4-hour-requirements.md).
 

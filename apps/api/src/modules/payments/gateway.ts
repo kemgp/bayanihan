@@ -3,6 +3,7 @@ import { Address, Asset, Contract, FeeBumpTransaction, Keypair, Networks, StrKey
 import type { Config } from '../../config/env.js';
 import { PaymentError, type Payment, type PaymentGateway, type Split, type Transfer } from './model.js';
 import { MAX_STROOPS } from './amount.js';
+import { paiflowOrigin, readinessFailure } from './readiness.js';
 
 const problem = () => new PaymentError(503, 'DEPLOYMENT_NOT_READY', 'The Testnet deployment must be an active native-XLM deposit flow with one 85/15 splitter.');
 export function transaction(xdr: string): Transaction {
@@ -38,19 +39,17 @@ export function validateSigned(payment: Payment, signedXdr: string) {
 export function createPaymentGateway(config: Config): PaymentGateway {
   const chain = new rpc.Server('https://soroban-testnet.stellar.org', { timeout: 15000 });
   const client = () => {
-    const url = new URL(config.paiflowBaseUrl);
-    const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-    if ((!local && url.protocol !== 'https:') || url.username || url.password || url.pathname !== '/' || url.search || url.hash
-      || !/^(pfk|pfd)_[a-f0-9]{64}$/.test(config.paiflowApiToken) || !/^[a-f0-9-]{36}$/i.test(config.paiflowDeploymentId)) throw problem();
-    return new Paiflow({ baseUrl: url.origin, token: config.paiflowApiToken, timeoutMs: 20000 });
+    return new Paiflow({ baseUrl: paiflowOrigin(config), token: config.paiflowApiToken, timeoutMs: 20000 });
   };
   let cache: { split: Split; until: number } | undefined;
   return {
     async configuration() {
       if (cache && cache.until > Date.now()) return cache.split;
+      let stage: 'paiflow' | 'stellar' | 'splitter' = 'paiflow';
       try {
         const deployment = client().deployment(config.paiflowDeploymentId);
         const [capabilities, balances] = await Promise.all([deployment.capabilities.get(), deployment.balances.get()]);
+        stage = 'splitter';
         const caps = capabilities.data;
         if (caps.deploymentId !== config.paiflowDeploymentId || caps.network !== 'testnet' || caps.triggerType !== 'deposit'
           || caps.inputAsset?.kind !== 'native' || caps.operations.execute.status !== 'supported' || caps.operations.transactions.status !== 'supported'
@@ -58,7 +57,9 @@ export function createPaymentGateway(config: Config): PaymentGateway {
         const nodes = balances.data.nodes;
         if (nodes.length !== 1 || nodes[0]?.templateKind !== 'SPLITTER' || nodes[0].stale || nodes[0].error) throw problem();
         const splitter = nodes[0].contractAddress;
+        stage = 'stellar';
         const entries = await chain.getLedgerEntries(new Contract(splitter).getFootprint());
+        stage = 'splitter';
         const data = entries.entries[0]?.val;
         if (data?.type !== 'contractData' || data.contractData.val.type !== 'scvContractInstance') throw problem();
         const state = Object.fromEntries((data.contractData.val.instance.storage ?? []).map(entry => [String(scValToNative(entry.key)), scValToNative(entry.val)])) as Record<string, unknown>;
@@ -73,7 +74,7 @@ export function createPaymentGateway(config: Config): PaymentGateway {
         const split = { worker: worker.address, platform: platform.address, splitter, trigger: state.ParentNode, token, minimumAmount: state.MinAmount.toString() };
         cache = { split, until: Date.now() + 15000 };
         return split;
-      } catch { throw problem(); }
+      } catch (error) { throw readinessFailure(error, stage); }
     },
     async prepare(payer, split, amountStroops) {
       const response = await client().deployment(config.paiflowDeploymentId).execute.prepare({ amount: amountStroops, from: payer });

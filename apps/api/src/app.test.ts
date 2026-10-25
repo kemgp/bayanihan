@@ -38,6 +38,14 @@ test('mainnet configuration is rejected', () => {
   assert.throws(() => readEnv({ STELLAR_NETWORK: 'public' }), /Testnet/);
 });
 
+test('production listens on the container interface and preserves the supplied port', () => {
+  const deployed = readEnv({ NODE_ENV: 'production', PORT: '10000' });
+  assert.equal(deployed.host, '0.0.0.0');
+  assert.equal(deployed.port, 10000);
+  assert.equal(readEnv({}).host, '127.0.0.1');
+  assert.equal(readEnv({ NODE_ENV: 'production', HOST: '127.0.0.1' }).host, '127.0.0.1');
+});
+
 test('Supabase admin client rejects publishable and legacy anon keys', () => {
   const jwt = (role: string) => `e30.${Buffer.from(JSON.stringify({ role })).toString('base64url')}.signature`;
   assert.equal(isSupabaseServerKey('sb_publishable_demo_public_key'), false);

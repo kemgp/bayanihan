@@ -6,11 +6,17 @@ Prepared October 25, 2026, Asia/Manila.
 
 ## Start here
 
-**Current authorization: implement the payment-first presentation feature.** The latest user direction supersedes the earlier planning-only hold for this scope. The full marketplace build and second project remain deferred. Configure actual public deployments only within the user's deployment instructions.
+The latest authorized increment adds **Browse Services and Service Details** to the existing sign-in, checkout/pending and verified receipt. Categories are exactly **Assembly, Carpentry, Plumbing, Electrical, Cleaning and Painting**. Furniture Assembly is the only presentation service; the others show Coming soon. Category filtering and search work locally. Details include proposed scope, an explicitly unverified demo worker profile, a clear 85/15 Testnet summary and a payment-demo action. Booking and additional recipient mappings remain deferred.
 
-Earlier milestones: profile migrations and shared-login guidance were created first. Shared sign-in and the protected profile API have since been implemented as part of payment checkout. The user reports applying the database setup; the last live read is blocked by the API key type rather than missing tables.
+Navigation: `/#services` opens public browsing; `/#services/furniture-assembly` opens details; `/#payment` requires sign-in/protected customer lookup. A new signed-in customer opens Browse Services; an existing attempt or receipt restores automatically on default entry. Browsing retains that saved attempt and offers Resume saved payment / View saved receipt. It never clears an unresolved charge or creates a booking. Hash links survive refresh and support browser Back.
 
-Read [MASTER.md](MASTER.md) at the start of every turn, as instructed by [AGENTS.md](AGENTS.md). Then read the relevant parts of [the detailed MVP requirements](output/BAYANIHAN-4-hour-requirements.md). This handoff summarizes the conversation and the starting point for a future work session. The latest explicit user instructions and current master brief govern any later changes.
+Run `npm run check`; the latest run passed **26 web, 32 API/payment and 22 SQL checks**, type checks and both builds. Browser checks exercised every category, empty/search/reset states, service details and the unauthenticated payment gate. The desktop 1280px and narrow 566px layouts had no horizontal overflow. Screenshots are in `output/browse-services-screen.png`, `output/service-details-screen.png` and `output/browse-services-narrow.png`. This increment is local and not deployed. Next: resolve remaining Render Paiflow readiness tracked in MASTER.md, deploy and rehearse one user-approved Freighter payment. No payment was signed/submitted and no migration was required for the discovery screens.
+
+**Current authorization: the payment presentation plus Browse Services and Service Details.** The latest user direction supersedes earlier planning-only and discovery-deferred notes for these two views. The full marketplace build and second project remain deferred. Configure actual public deployments only within the user's deployment instructions.
+
+Earlier milestones: profile migrations and shared-login guidance were created first. Shared sign-in and the protected profile API have since been implemented as part of payment checkout. Database setup and local server-secret access were confirmed; the older API-key blocker was resolved. Hosted API readiness is tracked separately in MASTER.md.
+
+Read both [MASTER.md](MASTER.md) and this handoff at the start of every turn, as requested by the user and instructed by [AGENTS.md](AGENTS.md). Then read the relevant parts of [the detailed MVP requirements](output/BAYANIHAN-4-hour-requirements.md). The latest explicit user instructions and current master brief govern later changes; the older planning/scaffold material below is historical where superseded by this update.
 
 Project location: `/Users/keitherwinmikhail/Documents/ChatGPT/Bayanihan`.
 
@@ -22,7 +28,7 @@ Project location: `/Users/keitherwinmikhail/Documents/ChatGPT/Bayanihan`.
 - Required stack: **PostgreSQL on Supabase, Express.js, React.js and Node.js**.
 - Required integrations: **Paiflow and Freighter wallet**, with payment integrated into the application.
 - Product requirements must follow the supplied pitch deck and use the supplied logos.
-- Persistent project context must be referenced on every prompt. Root `AGENTS.md` instructs loading `MASTER.md` every turn.
+- Persistent project context must be referenced on every prompt. Root `AGENTS.md` instructs loading both `MASTER.md` and `handoff.md` every turn.
 
 An earlier assumption of three parallel contributors was incorrect and has been replaced in the current master and requirements. Older feasibility notes may still describe that historical assumption or a different stack. Do not use those recommendations over the current instructions.
 
@@ -203,4 +209,4 @@ Before calling the MVP complete, demonstrate the entire authorized booking flow,
 - [Paiflow SDK](https://github.com/artisam-paiflow/paiflow/blob/develop/packages/sdk/README.md) and [payment starter](https://github.com/artisam-paiflow/paiflow-hackathon-starter).
 - [Earlier feasibility notes](output/BAYANIHAN-feasibility.md) and [macOS setup notes](output/paiflow-macos-setup.md) provide historical context. Current staffing, stack and schedule take precedence.
 
-Current authorization covers the payment presentation increment. The full marketplace and second project remain outside this task. Do not start extra agents or touch the second project.
+Current authorization covers the payment presentation and the two discovery views documented at the top. The full marketplace and second project remain outside this task. Do not start extra agents or touch the second project.
