@@ -31,7 +31,7 @@ Set these environment variables in Render, copying secret values directly from y
 
 Let Render supply `PORT`; the API already reads it. `HOST=0.0.0.0` is required because the local default is `127.0.0.1`. `--include=dev` retains TypeScript for the build when `NODE_ENV=production` is set.
 
-After deployment, open `https://your-api.onrender.com/api/health`. It checks process health only, not database access or settlement readiness. [Render web service documentation](https://render.com/docs/web-services), [Node version configuration](https://render.com/docs/node-version).
+The user reports the app is deployed. The API origin visible in the supplied configuration is `https://bayanihan-v9hm.onrender.com`. A live check on October 25, 2026 returned `200` from `/api/health` and `ready: true` from `/api/payments/config`; `/api/services` returned `501 NOT_IMPLEMENTED`, so the deployed API is behind the current local source. Health/readiness do not prove booking storage or payment settlement. [Render web service documentation](https://render.com/docs/web-services), [Node version configuration](https://render.com/docs/node-version).
 
 ## Vercel: React frontend
 
@@ -58,10 +58,10 @@ Do not append `/api` to `VITE_API_BASE_URL`: the client already supplies `/api/.
 
 ## Connect and verify
 
-1. Set Render's `WEB_ORIGIN` to the actual Vercel production origin and redeploy the API. It accepts only the exact origins configured in `WEB_ORIGIN`. Use a comma-separated list if a specific additional preview origin is required; no wildcards. Keep localhost origins out of production unless intentionally needed. CORS and payment request checks share this list.
+1. Set Render's `WEB_ORIGIN` to the actual Vercel production origin and redeploy the API. It accepts only the exact origins configured in `WEB_ORIGIN`. Use a comma-separated list if a specific additional preview origin is required; no wildcards. Keep localhost origins out of production unless intentionally needed. CORS and payment request checks share this list. The screenshot's local `.env` origin list does not configure Render; set the production origin in the Render service environment.
 2. Set Vercel's `VITE_API_BASE_URL` to the actual Render origin and redeploy the frontend.
 3. Configure the Supabase Auth Site URL to the Vercel production URL. Add exact redirect URLs when implementing email confirmation, recovery or other redirect-based Auth flows.
-4. Load Vercel and confirm the checkout reports Paiflow connected. Verify `/api/payments/config` returns Testnet readiness without CORS errors, then sign in and confirm the current customer payment can be loaded from Supabase.
+4. Load Vercel and confirm the checkout reports Paiflow connected. Verify `/api/payments/config` returns Testnet readiness without CORS errors, then sign in and confirm the current customer payment can be loaded from Supabase. Also verify `/api/services` returns the eight-category catalogue, the active Carpenter pilot/available slots, and `/api/bookings` returns only the signed-in customer's or worker's bookings.
 5. Follow [the payment presentation script](payment-demo.md) for a user-approved Freighter signature, exact 0.85/0.15-XLM payouts, reload recovery and receipt. Health/readiness alone does not prove settlement. Booking endpoints remain explicitly unfinished.
 
 Run `npm run check` locally before deploying. Record the real hosted URLs and observed checks in `MASTER.md` once available. Never copy local `.env` files into Git.

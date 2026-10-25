@@ -23,8 +23,9 @@ test('missing auth configuration fails closed', async () => {
   await request(app).get('/api/bookings').set('Authorization', 'Bearer dummy').expect(503);
 });
 
-test('unfinished services endpoint does not return fabricated success', async () => {
-  await request(app).get('/api/services').expect(501);
+test('service pilot details fail closed without database configuration', async () => {
+  const response = await request(app).get('/api/services').expect(503);
+  assert.equal(response.body.error.code, 'DATABASE_UNAVAILABLE');
 });
 
 test('malformed JSON returns a safe client error', async () => {

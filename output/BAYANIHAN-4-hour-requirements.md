@@ -4,9 +4,9 @@ Prepared October 25, 2026, Asia/Manila. Deliverable: an implementation specifica
 
 ## Current increment: payment presentation
 
-Latest user direction: prioritize payment through Paiflow and Freighter as the core feature to present. The current increment is a standalone authenticated Testnet checkout with a user-editable XLM amount with 85/15 distribution, durable attempts, exact transfer verification and recovery. Booking, discovery and worker lifecycle UI are deferred to a later increment. The full marketplace requirements below remain the product target; they are not all acceptance criteria for this reduced increment.
+Latest user direction: repair the backend integration for the deployed app. Current local source now loads the service catalogue and fixed slots from Express, saves booking requests, lists role-scoped bookings and applies authorized worker/customer status changes. The standalone authenticated Testnet checkout still supports editable XLM amounts, exact 85/15 verification and recovery. Booking-linked payment remains deferred; the payment demo is still a separate flow.
 
-Use the existing customer Auth account and protected profile. The service/physical-completion example is explicitly simulated. Store standalone attempts in the new server-only `demo_payments` table rather than fabricating completed bookings. Bind recipients to the configured deployment's live splitter and snapshot them per attempt. Keep one active demo per customer; starting another requires a terminal original outcome. Validate the user-entered amount as a decimal string from 0.00001 to 10,000 XLM, up to 7 decimal places. Derive worker stroops as floor(total × 85 / 100) and platform stroops as the remainder. Persist the three amounts before preparing, lock them for recovery, and verify payouts against that snapshot. Migration 004 preserves previous 1-XLM attempts while allowing new amounts. Preserve original-envelope, server amount validation, role/ownership and payout-evidence safeguards. See [payment demo guide](../docs/payment-demo.md) for implemented endpoints and rehearsal steps.
+Use the existing customer Auth account and protected profile. The service/physical-completion example is explicitly simulated. Present all eight requested categories in discovery and allow customers to select each; Carpenter furniture assembly is the only demo checkout, while the other seven are labeled planned and have no quote or booking availability. Store standalone attempts in the server-only `demo_payments` table rather than fabricating completed bookings. Bind recipients to the configured deployment's live splitter and snapshot them per attempt. Keep one active demo per customer; starting another requires a terminal original outcome. Validate the user-entered amount as a decimal string from 0.00001 to 10,000 XLM, up to 7 decimal places. Derive worker stroops as floor(total × 85 / 100) and platform stroops as the remainder. Persist the three amounts before preparing, lock them for recovery, and verify payouts against that snapshot. Migration 004 preserves previous 1-XLM attempts while allowing new amounts. Preserve original-envelope, server amount validation, role/ownership and payout-evidence safeguards. See [payment demo guide](../docs/payment-demo.md) for implemented endpoints and rehearsal steps.
 
 ## 1. Product and scope
 
@@ -14,9 +14,9 @@ BAYANIHAN lets a customer book a local skilled worker, confirm completed work, a
 
 The supplied pitch deck identifies trust concerns, slow access to help, inconsistent work and low worker visibility. It targets urban dwellers, local businesses and independent skilled workers. Its business model charges 15% per completed job. This MVP preserves that marketplace journey and commission model while limiting the demonstration to one service, one worker and one service area.
 
-**Confirmed staffing and budget:** one human contributor working with AI assistance, with four hours dedicated to BAYANIHAN. The user is building a second, separate project outside this workspace and budget. Start from the existing scaffold, reuse integration examples, and keep the interface minimal. Four hours is a stretch target for implementation, integration and rehearsal. A Supabase project, Paiflow account access, Freighter and funded testnet wallets must be available at the start. The first 30 minutes must establish a working 85/15 payment. Unavailable accounts or a blocked payment baseline require reassessing the target. This plan does not assume concurrent work by three contributors.
+**Confirmed staffing and budget:** a three-person team using AI-assisted development, with four hours dedicated to BAYANIHAN. Start from the existing scaffold, reuse integration examples, and keep the interface minimal. Four hours is a stretch target for implementation, integration and rehearsal. A Supabase project, Paiflow account access, Freighter and funded testnet wallets must be available at the start. The first 30 minutes must establish a working 85/15 payment. Unavailable accounts or a blocked payment baseline require reassessing the target.
 
-**Demo choices:** one furniture-assembly service, one seeded worker and a small list of appointment slots. The standalone payment presentation now lets users choose the labor amount in Stellar Testnet XLM; 1 XLM is only the initial value. These are proposed scope decisions, not claims from the deck. Physical work completion is simulated. All money screens identify Testnet and test assets. Do not present XLM amounts as pesos.
+**Demo choices:** the service catalogue shows Plumbing, Electrician, Carpenter, Appliances Repair, Cleaner, Painter, Gardener and Hvac repair. Only Carpenter furniture assembly opens the current demo checkout, with one seeded worker and a small list of appointment slots planned for the booking milestone. The standalone payment presentation lets users choose the labor amount in Stellar Testnet XLM; 1 XLM is only the initial value. These are scope decisions, not claims from the deck. Physical work completion is simulated. All money screens identify Testnet and test assets. Do not present XLM amounts as pesos.
 
 ## 2. Required stack and branding
 
@@ -44,7 +44,7 @@ The following table describes the complete marketplace target. For the current p
 | ID | Requirement | Acceptance criterion |
 | --- | --- | --- |
 | FR-01 | Shared customer and worker login | Both roles use one email/password login screen backed by Supabase Auth. Express verifies the access token and reads the protected profile role; the UI opens the corresponding customer or worker experience. No role selector grants access. Restore valid sessions on reload, support sign-out, and return to login when renewal fails. Invalid credentials show a clear error. A customer cannot use worker actions. |
-| FR-02 | Service and worker discovery | Customer sees the active service, scope, duration, service area, worker profile and the selected Testnet demo amount. Show a demo-profile label. Do not claim identity/background verification. |
+| FR-02 | Service discovery and worker profile | Customer can see and select all eight service categories. Carpenter is identified as the current pilot and opens its service details/payment demo. The other seven are clearly marked planned and cannot imply an available quote, worker or booking. The pilot shows scope, duration, Jaro service area, demo worker and selected Testnet amount. Do not claim identity/background verification. |
 | FR-03 | Booking request | Customer chooses an available slot and enters a short task description and demo address. Server creates a durable booking with the trusted service price. Missing fields and occupied slots are rejected. |
 | FR-04 | Worker job actions | Assigned worker sees incoming bookings, accepts a request, and marks accepted work done. Server rejects actions from other users or out-of-order transitions. |
 | FR-05 | Customer completion confirmation | Booking customer confirms work after the worker marks it done. Checkout becomes available. Job completion and payment status remain separately visible. |
@@ -101,7 +101,7 @@ Store the validated selected total and server-calculated shares as integer stroo
 
 Database constraints must prevent duplicate worker/slot bookings, duplicate transaction hashes and multiple active payment attempts for a booking. Use atomic database operations for payment reservation and verified-paid updates. Do not rely only on disabled buttons.
 
-Proposed application endpoints, to be built in Express:
+Marketplace endpoints implemented in local source:
 
 | Endpoint | Purpose |
 | --- | --- |
@@ -112,6 +112,8 @@ Proposed application endpoints, to be built in Express:
 | `POST /api/bookings/:id/payment/prepare` | Reserve and prepare, or return the existing attempt |
 | `POST /api/bookings/:id/payment/submit` | Validate and submit the original signed envelope |
 | `GET /api/bookings/:id/payment` | Reconcile original payment and return safe status/receipt fields |
+
+The booking-linked payment endpoints above remain unimplemented. The implemented checkout lives at `/api/payments/demo` and is not tied to a booking. On October 25, 2026, the deployed Render API returned `200` health and Testnet payment readiness, but `/api/services` returned `501 NOT_IMPLEMENTED`; deployment must be updated before the React marketplace integration can operate against production.
 
 Express verifies Supabase JWTs before protected actions and derives the user ID from that verification. Enable RLS on exposed tables. Keep payment mutations and role changes inaccessible to browser database writes. Server-secret access bypasses RLS, so Express must enforce ownership and transition rules itself. Limit request bodies, validate fields and rate-limit payment endpoints. [Supabase user verification](https://supabase.com/docs/reference/javascript/auth-getuser), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
@@ -131,7 +133,7 @@ Time is elapsed from the start of the dedicated BAYANIHAN build window. One cont
 
 Keep one service/profile screen, one shared role-aware booking screen and checkout/receipt within the booking detail. Reuse the existing shell and logos. Defer a separate marketing site, custom admin dashboard, elaborate animations and additional UI variants. Protect this work window from switching to the second project.
 
-If payment is blocked at the first checkpoint, stop cosmetic work and focus on the integration. If behind schedule, remove extra service cards, filters and decoration. Preserve authorization, trusted pricing, duplicate prevention and truthful payment states. A hosted payment page or recording is a disclosed contingency and does not satisfy the integrated-checkout acceptance criterion.
+If payment is blocked at the first checkpoint, stop cosmetic work and focus on the integration. Keep all eight requested categories visible in discovery; if behind schedule, defer filters and decoration while preserving the Carpenter-only pilot distinction. Preserve authorization, trusted pricing, duplicate prevention and truthful payment states. A hosted payment page or recording is a disclosed contingency and does not satisfy the integrated-checkout acceptance criterion.
 
 ## 8. Completion checks and deferred scope
 

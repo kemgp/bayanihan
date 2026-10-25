@@ -67,13 +67,13 @@ Follow [database setup](supabase/README.md) before implementing persisted featur
 
 TypeScript is used in both applications. The root config enables strict checking. Existing planning artifacts and logos are preserved.
 
-## Payment API and deferred booking
+## Marketplace and payment API
 
 `GET /api/health` returns process health only. It does not establish database or payment connectivity.
 
-`GET /api/services` currently returns `501 NOT_IMPLEMENTED`. The booking/status/payment routes listed in the requirements require a Supabase bearer token and then return `501` until implemented. Missing authentication returns `401`. A token with missing Supabase configuration returns `503`. No unfinished endpoint returns a fabricated booking, receipt or payment success.
+`GET /api/services` returns all eight catalogue categories plus the active Carpenter pilot and its available fixed slots when the pilot is seeded. `GET` and `POST /api/bookings` and `PATCH /api/bookings/:id/status` require a Supabase bearer token and enforce customer/assigned-worker permissions. The React app loads service details and booking records from these endpoints. Booking and payment remain separate: the standalone checkout does not fabricate a completed booking or settle a booking charge.
 
-The implemented `/api/me` and `/api/payments/demo` endpoints verify the Supabase token, protected customer role and payment ownership. Demo payment mutations are rate limited and server-owned. See [payment API details](docs/payment-demo.md). The booking endpoints are separate placeholders and remain deferred; the standalone checkout does not fabricate a completed booking.
+The `/api/me` and `/api/payments/demo` endpoints verify the Supabase token, protected customer role and payment ownership. Demo payment mutations are rate limited and server-owned. See [payment API details](docs/payment-demo.md) and [deployment settings](docs/deployment.md). The deployed Render service was reachable and Paiflow-ready on October 25, 2026, but `/api/services` still returned `501 NOT_IMPLEMENTED`; update the deployed API from the current source before marketplace requests can work.
 
 ## Checks and production builds
 
@@ -85,6 +85,6 @@ Runs strict type checking, API boundary tests, isolated PostgreSQL migration/see
 
 For demo account setup and the planned shared-login implementation, see [the authentication guide](docs/auth-implementation.md).
 
-After building, `npm start --workspace @bayanihan/api` runs the API and `npm run preview --workspace @bayanihan/web` previews the web build. The selected hosting is Vercel for the frontend and Render for the API, with Supabase for PostgreSQL/Auth. Follow [the deployment guide](docs/deployment.md) for workspace commands, environment settings and smoke checks. Hosting success has not yet been verified.
+After building, `npm start --workspace @bayanihan/api` runs the API and `npm run preview --workspace @bayanihan/web` previews the web build. The selected hosting is Vercel for the frontend and Render for the API, with Supabase for PostgreSQL/Auth. Follow [the deployment guide](docs/deployment.md) for workspace commands, environment settings and smoke checks.
 
-Next implementation sequence: configure development integrations, implement service/booking handlers and role checks, add the customer/worker UI, then implement the durable prepare/sign/submit/verify/recover payment lifecycle. Use the acceptance criteria in the requirements.
+Next implementation sequence: deploy and verify the marketplace integration, confirm production CORS and seeded Carpenter data, then rehearse a customer booking and worker status updates. Booking-linked payment remains deferred. Use the acceptance criteria in the requirements.

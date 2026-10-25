@@ -5,6 +5,9 @@ export class ApiError extends Error {
 }
 
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  if (import.meta.env.PROD && !baseUrl) {
+    throw new ApiError(0, 'API_BASE_URL_MISSING', 'The deployed API URL is missing. Set VITE_API_BASE_URL to the Render service origin and redeploy the frontend.');
+  }
   const response = await fetch(`${baseUrl}${path}`, options);
   if (!response.ok) {
     const body = await response.json().catch(() => null);
