@@ -4,9 +4,11 @@ Prepared October 25, 2026, Asia/Manila. Deliverable: an implementation specifica
 
 ## Current increment: payment presentation
 
-Latest user direction: prioritize payment through Paiflow and Freighter as the core feature to present. The current increment is a standalone authenticated Testnet checkout with a user-editable XLM amount with 85/15 distribution, durable attempts, exact transfer verification and recovery. Booking, discovery and worker lifecycle UI are deferred to a later increment. The full marketplace requirements below remain the product target; they are not all acceptance criteria for this reduced increment.
+Latest user direction: prioritize payment through Paiflow and Freighter as the core feature to present, with **Browse Services and Service Details** now authorized as supporting views. The payment increment is a standalone authenticated Testnet checkout with a user-editable XLM amount, 85/15 distribution, durable attempts, exact transfer verification and recovery. Booking and worker lifecycle UI remain deferred. The full marketplace requirements below remain the product target; they are not all acceptance criteria for this reduced increment.
 
 With one hour remaining, the user authorized three presentation screens, now implemented locally: **sign-in**, **checkout with pending/recovery states**, and **verified receipt**. Sign-in uses the existing Supabase account and restores the saved checkout. Checkout previews the exact split, locks prepared amounts, requires the original Freighter payer and exposes original-transaction recovery. Receipt requires saved paid status and matching receipt metadata, and displays total, both shares, payer/recipient addresses, original hash, ledger, PHT verification time and explorer/copy/print actions. Preserve responsive and keyboard-accessible layouts. Payment history, booking and dashboards remain deferred. Automated fixtures and visual review do not replace the live Freighter rehearsal.
+
+The subsequent discovery increment is also implemented locally. Required categories are **Assembly, Carpentry, Plumbing, Electrical, Cleaning and Painting**. Public browsing uses one local, explicitly labeled presentation service (Furniture Assembly), functional category/text filtering and clear Coming soon/empty states for the other categories. Service Details shows proposed scope, inclusions/exclusions, an unverified demonstration worker profile, selectable-amount guidance, fees and the 85/15 split. Its payment action requires the existing protected customer account and resumes any saved attempt. Browsing must not clear payment state, prepare a charge, create bookings, claim live availability or introduce new payout recipients. Use reloadable hash routes and preserve responsive access. No new database migration or live services API is implied. Read both MASTER.md and handoff.md on every prompt.
 
 Use the existing customer Auth account and protected profile. The service/physical-completion example is explicitly simulated. Store standalone attempts in the new server-only `demo_payments` table rather than fabricating completed bookings. Bind recipients to the configured deployment's live splitter and snapshot them per attempt. Keep one active demo per customer; starting another requires a terminal original outcome. Validate the user-entered amount as a decimal string from 0.00001 to 10,000 XLM, up to 7 decimal places. Derive worker stroops as floor(total × 85 / 100) and platform stroops as the remainder. Persist the three amounts before preparing, lock them for recovery, and verify payouts against that snapshot. Migration 004 preserves previous 1-XLM attempts while allowing new amounts. Preserve original-envelope, server amount validation, role/ownership and payout-evidence safeguards. See [payment demo guide](../docs/payment-demo.md) for implemented endpoints and rehearsal steps.
 
@@ -41,7 +43,7 @@ The current user-specified stack takes precedence over older project notes and t
 
 ## 3. Functional requirements and acceptance criteria
 
-The following table describes the complete marketplace target. For the current payment presentation, apply FR-06 through FR-08, persistent payment/receipt recovery from FR-09/FR-10, and the sign-in/role protections from FR-01. Booking linkage is deferred as stated above.
+The following table describes the complete marketplace target. For the current presentation, apply FR-06 through FR-08, persistent payment/receipt recovery from FR-09/FR-10, the sign-in/role protections from FR-01, and FR-02 only to the clearly labeled local demonstration catalog/details above. Live discovery data and booking linkage remain deferred.
 
 | ID | Requirement | Acceptance criterion |
 | --- | --- | --- |
@@ -77,6 +79,8 @@ This is payment after completion with immediate distribution. Escrow and refunds
 Before application checkout works, configure and confirm an **On Receive native XLM → Split** flow on Stellar Testnet with the worker at 85% and platform at 15%. Use distinct customer, worker and platform addresses. Bind the worker to the approved deployment UUID on the server. Additional workers require separately reviewed recipient mappings and are deferred.
 
 The SDK operates existing deployments and does not deploy flows. Configure a server-only token with Read and operate access to the selected deployment. Pin SDK 0.2.0 and check the deployment's capabilities before enabling checkout. [SDK setup](https://github.com/artisam-paiflow/paiflow/blob/develop/packages/sdk/README.md).
+
+Readiness failures must identify missing/invalid server configuration, denied access, unavailable upstream services or incompatible deployment/splitter through fixed safe messages/codes. Never expose credentials, raw SDK responses or arbitrary upstream error messages, and preserve all settlement and splitter validation.
 
 ### Freighter and payment lifecycle
 
