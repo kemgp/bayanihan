@@ -44,3 +44,33 @@ test('Supabase admin client rejects publishable and legacy anon keys', () => {
   assert.equal(isSupabaseServerKey('sb_secret_demo_server_key'), true);
   assert.equal(isSupabaseServerKey(jwt('service_role')), true);
 });
+
+test('frontend origin configuration normalizes exact origins and rejects unsafe entries', () => {
+  assert.deepEqual(readEnv({ WEB_ORIGIN: ' http://127.0.0.1:5174/, http://localhost:5174, http://localhost:5174/ ' }).webOrigins,
+    ['http://127.0.0.1:5174', 'http://localhost:5174']);
+  for (const origin of ['*', 'null', 'https://*.example.com', 'https://example.com/path', 'https://user:password@example.com', 'https://example.com?token=value', 'https://example.com#fragment', 'file:///tmp', 'https://example.com,']) {
+    assert.throws(() => readEnv({ WEB_ORIGIN: origin }), /WEB_ORIGIN/);
+  }
+});
+
+test('CORS accepts both explicitly configured local origins and rejects other sites', async () => {
+  const local = createApp(readEnv({ WEB_ORIGIN: 'http://127.0.0.1:5174,http://localhost:5174' }));
+  for (const origin of ['http://127.0.0.1:5174', 'http://localhost:5174']) {
+    const response = await request(local).options('/api/payments/demo/prepare').set('Origin', origin)
+      .set('Access-Control-Request-Method', 'POST').set('Access-Control-Request-Headers', 'authorization,content-type').expect(204);
+    assert.equal(response.headers['access-control-allow-origin'], origin);
+    assert.match(response.headers['access-control-allow-headers'], /authorization/);
+  }
+  for (const origin of ['https://untrusted.example', 'http://localhost.evil.test:5174', 'http://localhost:51740', 'null']) {
+    const response = await request(local).get('/api/health').set('Origin', origin).expect(200);
+    assert.equal(response.headers['access-control-allow-origin'], undefined);
+  }
+});
+
+test('a deployed origin does not implicitly enable localhost', async () => {
+  const deployed = createApp(readEnv({ NODE_ENV: 'production', WEB_ORIGIN: 'https://bayanihan.example/' }));
+  const allowed = await request(deployed).get('/api/health').set('Origin', 'https://bayanihan.example').expect(200);
+  assert.equal(allowed.headers['access-control-allow-origin'], 'https://bayanihan.example');
+  const rejected = await request(deployed).get('/api/health').set('Origin', 'http://localhost:5174').expect(200);
+  assert.equal(rejected.headers['access-control-allow-origin'], undefined);
+});

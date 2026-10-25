@@ -1,5 +1,6 @@
 import { StrKey } from '@stellar/stellar-sdk';
 import { PaymentError, matchingPayouts, type Payment, type PaymentGateway, type PaymentStore } from './model.js';
+import { parsePaymentAmount } from './amount.js';
 
 export function createPaymentService(store: PaymentStore, gateway: PaymentGateway, deploymentId: string) {
   const get = async (id: string, customerId: string) => {
@@ -31,17 +32,25 @@ export function createPaymentService(store: PaymentStore, gateway: PaymentGatewa
   return {
     configuration: () => gateway.configuration(),
     current: (customerId: string) => store.current(customerId),
-    async prepare(customerId: string, payer: string) {
+    async prepare(customerId: string, payer: string, amountXlm: unknown) {
       if (typeof payer !== 'string' || !StrKey.isValidEd25519PublicKey(payer)) throw new PaymentError(400, 'INVALID_WALLET', 'Connect a valid Freighter account.');
+      let amounts;
+      try { amounts = parsePaymentAmount(amountXlm); }
+      catch (error) { throw new PaymentError(400, 'INVALID_AMOUNT', (error as Error).message); }
       const existing = await store.current(customerId);
-      if (existing) return existing;
+      const original = (payment: Payment) => {
+        if (payment.amount_stroops !== amounts.amount_stroops || payment.payer_address !== payer) throw new PaymentError(409, 'PAYMENT_ALREADY_EXISTS', 'The saved payment has a different amount or wallet. Resolve it before starting another payment.');
+        return payment;
+      };
+      if (existing) return original(existing);
       const split = await gateway.configuration();
+      if (BigInt(amounts.amount_stroops) < BigInt(split.minimumAmount ?? '0')) throw new PaymentError(400, 'INVALID_AMOUNT', 'The selected amount is below the Paiflow deployment minimum.');
       if ([split.worker, split.platform].includes(payer)) throw new PaymentError(400, 'PAYER_IS_RECIPIENT', 'Use a customer wallet distinct from the worker and platform wallets.');
-      const reserved = await store.reserve(customerId, payer, deploymentId, split);
-      if (!reserved.created) return reserved.payment;
+      const reserved = await store.reserve(customerId, payer, deploymentId, split, amounts);
+      if (!reserved.created) return original(reserved.payment);
       const payment = reserved.payment;
       let prepared;
-      try { prepared = await gateway.prepare(payer, split); }
+      try { prepared = await gateway.prepare(payer, split, payment.amount_stroops); }
       catch {
         // No envelope has been returned to any browser, so this preparation can safely be released.
         await store.update(payment, { status: 'failed', active: false });

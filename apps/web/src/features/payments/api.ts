@@ -1,9 +1,10 @@
 import { apiFetch } from '../../lib/api';
-export type Split = { worker: string; platform: string; splitter: string; trigger: string; token: string };
+export type Split = { worker: string; platform: string; splitter: string; trigger: string; token: string; minimumAmount?: string };
 export type Payment = {
   id: string; status: 'preparing' | 'prepared' | 'pending' | 'paid' | 'failed' | 'expired';
   payer: string; split: Split; hash: string | null; expiresAt: string | null; createdAt: string;
   xdr: string | null; receipt: { hash: string; ledger: number; verifiedAt: string } | null;
+  total: string; workerAmount: string; platformAmount: string;
 };
 export type PaymentConfig = { ready: boolean; network: 'testnet'; split?: Split; message?: string };
 export type Profile = { id: string; display_name: string; role: 'customer' | 'worker' };

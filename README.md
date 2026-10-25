@@ -1,6 +1,6 @@
 # BAYANIHAN
 
-Payment-first local-services MVP using React, Express, Node.js and Supabase PostgreSQL. The current application demonstrates a standalone 1-XLM Stellar Testnet checkout through Freighter and Paiflow, with an 85/15 split. Read [MASTER.md](MASTER.md) first and [the requirements](output/BAYANIHAN-4-hour-requirements.md) for scope and acceptance criteria.
+Payment-first local-services MVP using React, Express, Node.js and Supabase PostgreSQL. The current application demonstrates a standalone Stellar Testnet checkout with an editable XLM amount through Freighter and Paiflow, with an 85/15 split. Read [MASTER.md](MASTER.md) first and [the requirements](output/BAYANIHAN-4-hour-requirements.md) for scope and acceptance criteria.
 
 ## Run locally
 
@@ -30,7 +30,7 @@ cp -n apps/api/.env.example apps/api/.env
 
 Fill the browser's Supabase URL/publishable key and the API's Supabase URL/server secret. Set the Paiflow origin, token and reviewed deployment UUID only in `apps/api/.env`. Restart development processes after changes. Never use a `VITE_*` name for a server secret.
 
-Paiflow is pinned to `@paiflow/sdk@0.2.0`. No payment is prepared, signed or submitted on startup. The checkout implements Freighter signing, Paiflow preparation/submission, exact native-XLM transfer verification and persistent receipts/recovery. Follow [the payment presentation guide](docs/payment-demo.md) for migration 003, the Supabase **server secret** (not the publishable key), required wallet setup and the demo script. An actual user-signed in-app payment must still be rehearsed. [Paiflow SDK](https://github.com/artisam-paiflow/paiflow/blob/develop/packages/sdk/README.md).
+Paiflow is pinned to `@paiflow/sdk@0.2.0`. No payment is prepared, signed or submitted on startup. The checkout implements Freighter signing, Paiflow preparation/submission, exact native-XLM transfer verification and persistent receipts/recovery. Follow [the payment presentation guide](docs/payment-demo.md) for migrations 003/004, the Supabase **server secret** (not the publishable key), required wallet setup and the demo script. An actual user-signed in-app payment must still be rehearsed. [Paiflow SDK](https://github.com/artisam-paiflow/paiflow/blob/develop/packages/sdk/README.md).
 
 Follow [database setup](supabase/README.md) before implementing persisted features. No remote resources are created by `npm ci`, `npm run dev` or `npm run build`.
 

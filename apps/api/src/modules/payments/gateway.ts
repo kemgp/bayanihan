@@ -1,7 +1,8 @@
 import { Paiflow } from '@paiflow/sdk';
 import { Address, Asset, Contract, FeeBumpTransaction, Keypair, Networks, StrKey, TransactionBuilder, rpc, scValToNative, type Transaction } from '@stellar/stellar-sdk';
 import type { Config } from '../../config/env.js';
-import { PaymentError, TOTAL, type Payment, type PaymentGateway, type Split, type Transfer } from './model.js';
+import { PaymentError, type Payment, type PaymentGateway, type Split, type Transfer } from './model.js';
+import { MAX_STROOPS } from './amount.js';
 
 const problem = () => new PaymentError(503, 'DEPLOYMENT_NOT_READY', 'The Testnet deployment must be an active native-XLM deposit flow with one 85/15 splitter.');
 export function transaction(xdr: string): Transaction {
@@ -11,21 +12,21 @@ export function transaction(xdr: string): Transaction {
 }
 export function transactionHash(xdr: string) { return Buffer.from(transaction(xdr).hash()).toString('hex'); }
 
-export function validatePreparation(xdr: string, payer: string, split: Split) {
+export function validatePreparation(xdr: string, payer: string, split: Split, amountStroops: string) {
   const tx = transaction(xdr);
   const op = tx.operations[0];
   if (tx.source !== payer || tx.operations.length !== 1 || op?.type !== 'invokeHostFunction' || (op.source && op.source !== payer)
     || op.func.type !== 'hostFunctionTypeInvokeContract') throw new Error('Unexpected payment operation.');
   const call = op.func.invokeContract;
   if (Address.fromScAddress(call.contractAddress).toString() !== split.trigger || call.functionName.toString() !== 'deposit'
-    || call.args.length !== 2 || scValToNative(call.args[0]!) !== payer || scValToNative(call.args[1]!) !== BigInt(TOTAL)) throw new Error('Payment inputs do not match.');
+    || call.args.length !== 2 || scValToNative(call.args[0]!) !== payer || scValToNative(call.args[1]!) !== BigInt(amountStroops)) throw new Error('Payment inputs do not match.');
   if (!tx.timeBounds || BigInt(tx.timeBounds.maxTime) === 0n) throw new Error('Payment must expire.');
   return tx;
 }
 
 export function validateSigned(payment: Payment, signedXdr: string) {
   try {
-    const tx = validatePreparation(signedXdr, payment.payer_address, payment.split);
+    const tx = validatePreparation(signedXdr, payment.payer_address, payment.split, payment.amount_stroops);
     if (!payment.unsigned_xdr || transactionHash(signedXdr) !== payment.transaction_hash || transactionHash(payment.unsigned_xdr) !== payment.transaction_hash) throw new Error();
     const key = Keypair.fromPublicKey(payment.payer_address);
     if (!tx.signatures.some(signature => key.verify(tx.hash(), signature.signature.value))) throw new Error();
@@ -64,20 +65,20 @@ export function createPaymentGateway(config: Config): PaymentGateway {
         const recipients = state.Recipients as Array<{ address: string; bps: number; amount: bigint; is_cash_out: boolean }> | undefined;
         const token = Asset.native().contractId(Networks.TESTNET);
         if (!recipients || recipients.length !== 2 || state.Asset !== token || state.Paused !== false || state.TotalFixedAmount !== 0n
-          || typeof state.MinAmount !== 'bigint' || state.MinAmount > BigInt(TOTAL) || !Array.isArray(state.NextSteps) || state.NextSteps.length) throw problem();
+          || typeof state.MinAmount !== 'bigint' || state.MinAmount < 0n || state.MinAmount > MAX_STROOPS || !Array.isArray(state.NextSteps) || state.NextSteps.length) throw problem();
         const worker = recipients.find(r => r.bps === 8500);
         const platform = recipients.find(r => r.bps === 1500);
-        if (!worker || !platform || worker.address === platform.address || recipients.some(r => r.amount !== 0n || r.is_cash_out || !StrKey.isValidEd25519PublicKey(r.address))
+        if (!worker || !platform || recipients[0] !== worker || recipients[1] !== platform || worker.address === platform.address || recipients.some(r => r.amount !== 0n || r.is_cash_out || !StrKey.isValidEd25519PublicKey(r.address))
           || typeof state.ParentNode !== 'string' || !StrKey.isValidContract(state.ParentNode)) throw problem();
-        const split = { worker: worker.address, platform: platform.address, splitter, trigger: state.ParentNode, token };
+        const split = { worker: worker.address, platform: platform.address, splitter, trigger: state.ParentNode, token, minimumAmount: state.MinAmount.toString() };
         cache = { split, until: Date.now() + 15000 };
         return split;
       } catch { throw problem(); }
     },
-    async prepare(payer, split) {
-      const response = await client().deployment(config.paiflowDeploymentId).execute.prepare({ amount: TOTAL, from: payer });
+    async prepare(payer, split, amountStroops) {
+      const response = await client().deployment(config.paiflowDeploymentId).execute.prepare({ amount: amountStroops, from: payer });
       if (response.data.network !== 'testnet' || response.data.networkPassphrase !== Networks.TESTNET) throw problem();
-      const tx = validatePreparation(response.data.xdr, payer, split);
+      const tx = validatePreparation(response.data.xdr, payer, split, amountStroops);
       const expiry = Number(tx.timeBounds!.maxTime) * 1000;
       if (!Number.isSafeInteger(expiry) || expiry <= Date.now() || expiry !== Date.parse(response.data.expiresAt)) throw problem();
       return { xdr: response.data.xdr, hash: transactionHash(response.data.xdr), expiresAt: response.data.expiresAt, requestId: response.metadata.historyRequestId ?? null, fee: tx.fee };

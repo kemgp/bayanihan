@@ -11,7 +11,7 @@ export function createApp(config: Config = readEnv()) {
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());
-  app.use(cors({ origin: config.webOrigin }));
+  app.use(cors({ origin: config.webOrigins }));
   app.use(express.json({ limit: '256kb' }));
   const supabase = createSupabaseAdmin(config);
   app.use('/api', createPaymentRouter(config, supabase));

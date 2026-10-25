@@ -4,9 +4,9 @@ Prepared October 25, 2026, Asia/Manila. Deliverable: an implementation specifica
 
 ## Current increment: payment presentation
 
-Latest user direction: prioritize payment through Paiflow and Freighter as the core feature to present. The current increment is a standalone authenticated 1-XLM Testnet checkout with 85/15 distribution, durable attempts, exact transfer verification and recovery. Booking, discovery and worker lifecycle UI are deferred to a later increment. The full marketplace requirements below remain the product target; they are not all acceptance criteria for this reduced increment.
+Latest user direction: prioritize payment through Paiflow and Freighter as the core feature to present. The current increment is a standalone authenticated Testnet checkout with a user-editable XLM amount with 85/15 distribution, durable attempts, exact transfer verification and recovery. Booking, discovery and worker lifecycle UI are deferred to a later increment. The full marketplace requirements below remain the product target; they are not all acceptance criteria for this reduced increment.
 
-Use the existing customer Auth account and protected profile. The service/physical-completion example is explicitly simulated. Store standalone attempts in the new server-only `demo_payments` table rather than fabricating completed bookings. Bind recipients to the configured deployment's live splitter and snapshot them per attempt. Keep one active demo per customer; starting another requires a terminal original outcome. Preserve all original-envelope, trusted-price, role/ownership and payout-evidence safeguards. See [payment demo guide](../docs/payment-demo.md) for implemented endpoints and rehearsal steps.
+Use the existing customer Auth account and protected profile. The service/physical-completion example is explicitly simulated. Store standalone attempts in the new server-only `demo_payments` table rather than fabricating completed bookings. Bind recipients to the configured deployment's live splitter and snapshot them per attempt. Keep one active demo per customer; starting another requires a terminal original outcome. Validate the user-entered amount as a decimal string from 0.00001 to 10,000 XLM, up to 7 decimal places. Derive worker stroops as floor(total × 85 / 100) and platform stroops as the remainder. Persist the three amounts before preparing, lock them for recovery, and verify payouts against that snapshot. Migration 004 preserves previous 1-XLM attempts while allowing new amounts. Preserve original-envelope, server amount validation, role/ownership and payout-evidence safeguards. See [payment demo guide](../docs/payment-demo.md) for implemented endpoints and rehearsal steps.
 
 ## 1. Product and scope
 
@@ -16,7 +16,7 @@ The supplied pitch deck identifies trust concerns, slow access to help, inconsis
 
 **Confirmed staffing and budget:** one human contributor working with AI assistance, with four hours dedicated to BAYANIHAN. The user is building a second, separate project outside this workspace and budget. Start from the existing scaffold, reuse integration examples, and keep the interface minimal. Four hours is a stretch target for implementation, integration and rehearsal. A Supabase project, Paiflow account access, Freighter and funded testnet wallets must be available at the start. The first 30 minutes must establish a working 85/15 payment. Unavailable accounts or a blocked payment baseline require reassessing the target. This plan does not assume concurrent work by three contributors.
 
-**Fixed demo choices:** one furniture-assembly service, one seeded worker, a small list of appointment slots, and a labor-only price of **1 Stellar Testnet XLM**. These are proposed scope decisions, not claims from the deck. Physical work completion is simulated. All money screens identify Testnet and test assets. Do not present XLM amounts as pesos.
+**Demo choices:** one furniture-assembly service, one seeded worker and a small list of appointment slots. The standalone payment presentation now lets users choose the labor amount in Stellar Testnet XLM; 1 XLM is only the initial value. These are proposed scope decisions, not claims from the deck. Physical work completion is simulated. All money screens identify Testnet and test assets. Do not present XLM amounts as pesos.
 
 ## 2. Required stack and branding
 
@@ -33,7 +33,7 @@ The supplied pitch deck identifies trust concerns, slow access to help, inconsis
 
 Use the provided wide `Bayanihan Logo.png` in the header/login screen and the provided `4.svg` hand symbol for compact branding. Copies are in `assets/branding/`. Preserve artwork proportions and colors, provide descriptive alt text, and use blue accents consistent with the originals. Do not redraw the logos.
 
-Deploy both services from the repository root to retain the npm workspace lockfile and shared TypeScript config. Configure the frontend API origin at build time and the backend's exact allowed browser origin at runtime. Render must bind to `0.0.0.0` using its supplied `PORT`. Keep Supabase server secrets and Paiflow credentials exclusively on Render. See [deployment settings](../docs/deployment.md). Hosting the scaffold does not establish completion of the application or its payment flow.
+Deploy both services from the repository root to retain the npm workspace lockfile and shared TypeScript config. Configure the frontend API origin at build time and the backend's exact allowed browser origins at runtime through the comma-separated `WEB_ORIGIN` allowlist. CORS and payment mutations must enforce the same list, without wildcards; the local configuration explicitly permits `http://localhost:5174` and `http://127.0.0.1:5174`. Render must bind to `0.0.0.0` using its supplied `PORT`. Keep Supabase server secrets and Paiflow credentials exclusively on Render. See [deployment settings](../docs/deployment.md). Hosting the scaffold does not establish completion of the application or its payment flow.
 
 The current user-specified stack takes precedence over older project notes and technology images in the deck. Paiflow's Next.js starter is a reference for payment logic. Port that logic into Express and React. [Paiflow SDK](https://github.com/artisam-paiflow/paiflow/blob/develop/packages/sdk/README.md), [payment reference](https://github.com/artisam-paiflow/paiflow-hackathon-starter).
 
@@ -44,12 +44,12 @@ The following table describes the complete marketplace target. For the current p
 | ID | Requirement | Acceptance criterion |
 | --- | --- | --- |
 | FR-01 | Shared customer and worker login | Both roles use one email/password login screen backed by Supabase Auth. Express verifies the access token and reads the protected profile role; the UI opens the corresponding customer or worker experience. No role selector grants access. Restore valid sessions on reload, support sign-out, and return to login when renewal fails. Invalid credentials show a clear error. A customer cannot use worker actions. |
-| FR-02 | Service and worker discovery | Customer sees the active service, scope, duration, service area, worker profile and 1-XLM demo price. Show a demo-profile label. Do not claim identity/background verification. |
+| FR-02 | Service and worker discovery | Customer sees the active service, scope, duration, service area, worker profile and the selected Testnet demo amount. Show a demo-profile label. Do not claim identity/background verification. |
 | FR-03 | Booking request | Customer chooses an available slot and enters a short task description and demo address. Server creates a durable booking with the trusted service price. Missing fields and occupied slots are rejected. |
 | FR-04 | Worker job actions | Assigned worker sees incoming bookings, accepts a request, and marks accepted work done. Server rejects actions from other users or out-of-order transitions. |
 | FR-05 | Customer completion confirmation | Booking customer confirms work after the worker marks it done. Checkout becomes available. Job completion and payment status remain separately visible. |
 | FR-06 | Freighter connection | Customer connects a wallet and sees its shortened address and network. Missing extension, refused connection or wrong network produces an actionable message. Signing uses the same account selected for preparation. |
-| FR-07 | Integrated payment review and signing | Inside BAYANIHAN, customer reviews 1 XLM, worker 0.85 XLM, platform 0.15 XLM, and additional network fees. Express prepares the Paiflow transaction. Freighter asks for explicit signing consent. |
+| FR-07 | Integrated payment review and signing | Inside BAYANIHAN, the customer edits the XLM amount before preparation and reviews the total, calculated 85/15 shares and additional network fees. Totals use exact integer stroops; no zero, negative, exponential, overprecise or out-of-range input is accepted. The prepared amount is locked, and receipt/recovery displays use its saved values. Express prepares the Paiflow transaction. Freighter asks for explicit signing consent. |
 | FR-08 | Settlement verification | Server verifies the original transaction and matching payer, deployment, asset, amount and both transfers before marking the booking paid. A success banner or client-provided hash alone cannot mark it paid. |
 | FR-09 | Booking history and receipt | Customer sees their bookings. A paid booking shows total, worker payout, commission, network, transaction hash, timestamp and a Testnet explorer link. Receipt survives a page reload. |
 | FR-10 | Payment recovery | Repeated clicks, reloads or a lost submission response recover the original payment attempt. Pending/unknown outcomes stay pending and block a replacement charge. Wallet rejection never displays payment success. |
@@ -64,7 +64,7 @@ Job transitions are `requested → accepted → work_done → completed`. The wo
 
 Payment states are `unpaid`, `preparing`, `prepared`, `submitted`, `pending`, `paid`, and `failed`. Preparation/signing problems retain their recovery record. Only confirmed terminal chain failure may resolve an attempted submission as failed. Ambiguous outcomes require reconciliation of the original transaction, including after local expiry.
 
-The 15% fee comes from the total charge. The customer pays 1 XLM plus network fees, the worker receives 0.85 XLM, and BAYANIHAN receives 0.15 XLM. No additional 15% surcharge applies.
+The 15% fee comes from the total charge. The customer pays their selected amount plus network fees. The worker receives floor(total stroops × 85 / 100), and BAYANIHAN receives the remainder. For example, 2.5 XLM produces worker/platform payouts of 2.125/0.375 XLM. No additional 15% surcharge applies.
 
 This is payment after completion with immediate distribution. Escrow and refunds are outside this MVP. The worker therefore carries a risk of customer nonpayment after work.
 
@@ -97,7 +97,7 @@ Server configuration includes `SUPABASE_URL`, a Supabase server secret, `PAIFLOW
 | `bookings` | Customer, worker and service references, slot, task, address, snapshotted price, job status, payment status, timestamps |
 | `payment_attempts` | Booking reference, payer, network/asset, expected amounts/recipients, deployment UUID, preparation/history metadata, original XDR/hash, status and verification evidence |
 
-Use integer amounts: total `10000000`, worker `8500000`, platform `1500000` stroops. Serialize amounts as strings across APIs. Keep customer addresses off-chain. Restrict signed-envelope storage to the server.
+Store the validated selected total and server-calculated shares as integer stroops on each demo attempt; for example, 2.5 XLM uses total `25000000`, worker `21250000` and platform `3750000` stroops. Serialize amounts as strings across APIs. Keep customer addresses off-chain. Restrict signed-envelope storage to the server.
 
 Database constraints must prevent duplicate worker/slot bookings, duplicate transaction hashes and multiple active payment attempts for a booking. Use atomic database operations for payment reservation and verified-paid updates. Do not rely only on disabled buttons.
 
@@ -139,7 +139,7 @@ The MVP passes when:
 
 - A customer books, the assigned worker accepts and reports completion, and the customer confirms it.
 - Freighter signs a real Testnet payment initiated inside the application.
-- Server evidence confirms 0.85 XLM to the worker and 0.15 XLM to the platform for that booking.
+- Server evidence confirms the exact snapshotted 85/15 payouts for the selected amount.
 - Receipt and booking persist after reload and server restart.
 - Wrong-role actions and altered price/deployment inputs fail.
 - Duplicate clicks and refresh during a pending payment do not create another charge.

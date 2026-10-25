@@ -6,6 +6,7 @@ import { ApiError, apiFetch } from './lib/api';
 import { supabase } from './lib/supabase';
 import { paymentRequest, type Payment, type PaymentConfig, type Profile } from './features/payments/api';
 import { connectWallet, signPayment } from './features/payments/wallet';
+import { previewAmount, formatXlm } from './features/payments/amount';
 
 const short = (address: string) => `${address.slice(0, 7)}…${address.slice(-6)}`;
 function Check() { return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
@@ -18,6 +19,7 @@ export function App() {
   const [payment, setPayment] = useState<Payment | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [wallet, setWallet] = useState('');
+  const [amount, setAmount] = useState('1');
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
@@ -113,12 +115,17 @@ export function App() {
     });
   }
   const split = payment?.split ?? config?.split;
+  const amounts = payment ?? previewAmount(amount);
+  const totalLabel = amounts ? formatXlm(amounts.total) : '—';
+  const workerLabel = amounts ? formatXlm(amounts.workerAmount) : '—';
+  const platformLabel = amounts ? formatXlm(amounts.platformAmount) : '—';
+  const validAmount = !!amounts && BigInt(amounts.total) >= BigInt(split?.minimumAmount ?? '0');
   const paid = payment?.status === 'paid';
   const pending = payment?.status === 'pending';
   const terminal = payment && ['paid', 'failed', 'expired'].includes(payment.status);
   const prepared = payment?.status === 'prepared';
   const steps = [wallet || payment ? 'done' : 'current', paid ? 'done' : payment ? 'current' : '', paid ? 'done' : pending ? 'current' : ''];
-  const canPay = loaded && profile?.role === 'customer' && config?.ready;
+  const canPay = loaded && profile?.role === 'customer' && config?.ready && validAmount;
 
   return <div className="app-shell">
     <header className="header">
@@ -131,20 +138,28 @@ export function App() {
         <h1>One helping hand.<br /><span>A fair share for all.</span></h1>
         <p className="story-description">Pay for local skills with a clear split. One wallet signature sends the worker their share and supports the community.</p>
         <div className="split-visual">
-          <div className="share-worker"><span>To your worker</span><strong>85<span>%</span></strong><small>0.85 XLM</small></div>
-          <div className="share-platform"><img src={symbol} alt="" /><span>To BAYANIHAN</span><strong>15<span>%</span></strong><small>0.15 XLM</small></div>
+          <div className="share-worker"><span>To your worker</span><strong>85<span>%</span></strong><small>{workerLabel} XLM</small></div>
+          <div className="share-platform"><img src={symbol} alt="" /><span>To BAYANIHAN</span><strong>15<span>%</span></strong><small>{platformLabel} XLM</small></div>
         </div>
         <div className="integration-line"><span>CONNECTED THROUGH</span><strong>Freighter <span>×</span> Paiflow</strong></div>
-        <p className="demo-note">Presentation checkout · 1 test XLM<br />The service and physical completion are simulated. Wallet signing and payment use Stellar Testnet.</p>
+        <p className="demo-note">Presentation checkout · Test XLM only<br />The service and physical completion are simulated. Wallet signing and payment use Stellar Testnet.</p>
       </section>
       <section className="checkout" aria-label="Payment checkout">
         <div className="card-topline"><span>PAYMENT CHECKOUT</span><span className="demo-label">TEST ASSETS ONLY</span></div>
         <div className="service-heading"><div className="service-icon"><img src={symbol} alt="" /></div><div><h2>Furniture assembly</h2><p>Labor only · Demo service</p></div></div>
-        <div className="total"><span>Total payment</span><strong>1.00 <small>XLM</small></strong></div>
+        <div className="amount-editor">
+          <label htmlFor="payment-amount">Payment amount (XLM)</label>
+          <div className="amount-input"><input id="payment-amount" type="text" inputMode="decimal" autoComplete="off" spellCheck={false}
+            value={payment ? formatXlm(payment.total) : amount} onChange={event => setAmount(event.target.value)}
+            disabled={!!busy || !!payment || (!!session && !loaded) || profile?.role === 'worker'}
+            aria-invalid={!validAmount} aria-describedby="amount-help" /><span>XLM</span></div>
+          <p id="amount-help">{payment ? 'Amount saved with this payment. Resolve it before starting a different amount.' : !validAmount && amount ? 'Enter 0.00001–10,000 XLM, up to 7 decimal places, and meet the deployment minimum.' : 'Enter 0.00001–10,000 XLM. Up to 7 decimal places.'}</p>
+        </div>
+        <div className="total"><span>Total payment</span><strong>{totalLabel} <small>XLM</small></strong></div>
         <div className="breakdown">
-          <div><span><i className="dot worker-dot" />Worker receives <small>85%</small></span><strong>0.85 XLM</strong></div>
-          <div><span><i className="dot platform-dot" />BAYANIHAN <small>15%</small></span><strong>0.15 XLM</strong></div>
-          <div className="split-bar"><span /><span /></div><p>Network fees are additional and shown in Freighter.</p>
+          <div><span><i className="dot worker-dot" />Worker receives <small>85%</small></span><strong>{workerLabel} XLM</strong></div>
+          <div><span><i className="dot platform-dot" />BAYANIHAN <small>15%</small></span><strong>{platformLabel} XLM</strong></div>
+          <div className="split-bar"><span /><span /></div><p>Network fees are additional and shown in Freighter. Worker share rounds down; BAYANIHAN receives the remainder.</p>
         </div>
         <ol className="steps">{['Connect wallet', 'Sign payment', 'Verify split'].map((step, i) => <li className={steps[i]} key={step}><span>{steps[i] === 'done' ? <Check /> : i + 1}</span>{step}</li>)}</ol>
         <div className="checkout-action">
@@ -157,7 +172,7 @@ export function App() {
           </form> : !profile ? <p className="muted">{error ? 'Account could not be loaded.' : 'Loading your account…'}</p> : profile.role !== 'customer' ? <div className="state-panel"><h3>Customer checkout</h3><p>Signed in as {profile.display_name}, a worker. Sign out and use the customer account to demonstrate payment.</p></div> : <>
             <div className="account-line"><span>Customer</span><strong>{profile.display_name}</strong></div>
             {!loaded && <button className="secondary-button" disabled={!!busy} onClick={() => run('Loading…', async () => { const result = await paymentRequest(token!); acceptPayment(result.payment); setLoaded(true); })}>{busy || 'Load saved checkout'}</button>}
-            {paid ? <div className="receipt-panel" role="status"><div className="success-icon"><Check /></div><h3>Payment verified</h3><p>The original transaction and both payouts are confirmed on Stellar Testnet.</p><div><span>Worker received</span><strong>0.85 XLM</strong></div><div><span>BAYANIHAN received</span><strong>0.15 XLM</strong></div><small>Ledger {payment.receipt?.ledger.toLocaleString()} · {payment.receipt && new Date(payment.receipt.verifiedAt).toLocaleString()}</small></div> : pending ? <div className="state-panel pending-panel" role="status"><span className="pulse" /><h3>Checking your payment</h3><p>The original transaction is saved. Settlement or payout evidence is still pending. Check its status before starting another payment.</p></div> : payment?.status === 'preparing' ? <div className="state-panel"><h3>Preparing your payment</h3><p>Another request reserved this checkout. Check the saved attempt in a moment.</p></div> : terminal ? <div className="state-panel"><h3>{payment.status === 'expired' ? 'Payment expired' : 'Payment did not complete'}</h3><p>{payment.status === 'expired' ? 'The server confirmed the signing window has closed and found no included transaction in the covered chain history.' : 'The transaction failed on-chain, or preparation ended before an envelope was made available.'} You can start a new demo.</p></div> : <>
+            {paid ? <div className="receipt-panel" role="status"><div className="success-icon"><Check /></div><h3>Payment verified</h3><p>The original transaction and both payouts are confirmed on Stellar Testnet.</p><div><span>Worker received</span><strong>{workerLabel} XLM</strong></div><div><span>BAYANIHAN received</span><strong>{platformLabel} XLM</strong></div><small>Ledger {payment.receipt?.ledger.toLocaleString()} · {payment.receipt && new Date(payment.receipt.verifiedAt).toLocaleString()}</small></div> : pending ? <div className="state-panel pending-panel" role="status"><span className="pulse" /><h3>Checking your payment</h3><p>The original transaction is saved. Settlement or payout evidence is still pending. Check its status before starting another payment.</p></div> : payment?.status === 'preparing' ? <div className="state-panel"><h3>Preparing your payment</h3><p>Another request reserved this checkout. Check the saved attempt in a moment.</p></div> : terminal ? <div className="state-panel"><h3>{payment.status === 'expired' ? 'Payment expired' : 'Payment did not complete'}</h3><p>{payment.status === 'expired' ? 'The server confirmed the signing window has closed and found no included transaction in the covered chain history.' : 'The transaction failed on-chain, or preparation ended before an envelope was made available.'} You can start a new demo.</p></div> : <>
               <button className={wallet ? 'wallet-connected' : 'secondary-button wallet-button'} disabled={!!busy || !loaded} onClick={() => run('Connecting Freighter…', async () => { setWallet(await connectWallet()); })}><span>{wallet ? '● Freighter connected' : 'Connect Freighter'}</span>{wallet ? <code>{short(wallet)}</code> : <span aria-hidden="true">↗</span>}</button>
               {payment && <p className="wallet-hint">Prepared for <code title={payment.payer}>{short(payment.payer)}</code>{wallet && wallet !== payment.payer && ' · Select this account in Freighter.'}{payment.expiresAt && <> · Sign before {new Date(payment.expiresAt).toLocaleTimeString()}. If it expires, check payment status.</>}</p>}
               {prepared ? <button className="primary-button" disabled={!!busy || !wallet || wallet !== payment.payer || !canPay} onClick={() => run('Approve in Freighter…', async () => {
@@ -165,8 +180,8 @@ export function App() {
                 const signedXdr = await signPayment(payment.xdr, payment.payer);
                 setBusy('Submitting through Paiflow…');
                 const result = await paymentRequest(token!, `/${payment.id}/submit`, { signedXdr }); acceptPayment(result.payment);
-              })}>{busy || 'Sign & pay 1 XLM'}<span aria-hidden="true">↗</span></button> : <button className="primary-button" disabled={!!busy || !wallet || !canPay} onClick={() => run('Preparing with Paiflow…', async () => {
-                const result = await paymentRequest(token!, '/prepare', { payer: wallet }); acceptPayment(result.payment);
+              })}>{busy || `Sign & pay ${totalLabel} XLM`}<span aria-hidden="true">↗</span></button> : <button className="primary-button" disabled={!!busy || !wallet || !canPay} onClick={() => run('Preparing with Paiflow…', async () => {
+                const result = await paymentRequest(token!, '/prepare', { payer: wallet, amountXlm: amount.trim() }); acceptPayment(result.payment);
               })}>{busy || 'Prepare payment'}<span aria-hidden="true">→</span></button>}
               <p className="wallet-hint">Your wallet asks for approval before signing. BAYANIHAN never receives your private key.</p>
             </>}
@@ -176,7 +191,7 @@ export function App() {
             })}>{busy || 'Check payment status'}</button>}
             {pending && <button className="text-button retry-button" disabled={!!busy} onClick={() => run('Retrying saved transaction…', async () => { const result = await paymentRequest(token!, `/${payment.id}/retry`, {}); acceptPayment(result.payment); setNotice('Retried the exact saved envelope. No new payment was prepared.'); })}>Retry the saved transaction</button>}
             {payment?.hash && <a className="explorer-link" href={`https://stellar.expert/explorer/testnet/tx/${payment.hash}`} target="_blank" rel="noreferrer">{paid ? 'View verified transaction' : 'View original transaction'} <span aria-hidden="true">↗</span><code>{short(payment.hash)}</code></a>}
-            {terminal && <button className="secondary-button" disabled={!!busy} onClick={() => run('Opening new demo…', async () => { await paymentRequest(token!, `/${payment.id}/new`, {}); setPayment(null); setWallet(''); })}>{busy || 'Start another test payment'}</button>}
+            {terminal && <button className="secondary-button" disabled={!!busy} onClick={() => run('Opening new demo…', async () => { await paymentRequest(token!, `/${payment.id}/new`, {}); setAmount(formatXlm(payment.total)); setPayment(null); setWallet(''); })}>{busy || 'Start another test payment'}</button>}
           </>}
           {error && <p className="message error" role="alert">{error}</p>}
           {notice && <p className="message information" role="status">{notice}</p>}

@@ -7,6 +7,7 @@ const read = path => readFile(new URL(path, root), 'utf8');
 const initial = await read('supabase/migrations/20261025000100_initial_schema.sql');
 const profiles = await read('supabase/migrations/20261025000200_auth_profiles.sql');
 const paymentDemo = await read('supabase/migrations/20261025000300_payment_demo.sql');
+const variableAmounts = await read('supabase/migrations/20261025000400_variable_demo_amounts.sql');
 const seedTemplate = await read('supabase/seeds/demo_profiles.sql');
 const db = new PGlite();
 let passed = 0;
@@ -136,6 +137,40 @@ try {
     await db.exec(`update public.demo_payments set transaction_hash='${hash}' where id='${demoId}'`);
     await assert.rejects(db.query('insert into public.demo_payments (customer_id,payer_address,deployment_id,split,transaction_hash) values ($1,$2,$3,$4,$5)', [customerId,demoPayer,demoId,{},hash]), /unique/);
     await db.query('insert into public.demo_payments (customer_id,payer_address,deployment_id,split) values ($1,$2,$3,$4)', [customerId,demoPayer,demoId,{}]);
+  });
+  await check('variable-amount migration preserves existing payment amounts', async () => {
+    const before = await rows('select id,amount_stroops::text,worker_amount_stroops::text,platform_amount_stroops::text from public.demo_payments order by id');
+    await db.exec(variableAmounts);
+    assert.deepEqual(await rows('select id,amount_stroops::text,worker_amount_stroops::text,platform_amount_stroops::text from public.demo_payments order by id'), before);
+  });
+  const insertVariable = (total, worker, platform) => db.query(
+    "insert into public.demo_payments (customer_id,payer_address,deployment_id,split,amount_stroops,worker_amount_stroops,platform_amount_stroops,status,active) values ($1,$2,$3,$4,$5,$6,$7,'failed',false) returning id",
+    [customerId,demoPayer,demoId,{},total,worker,platform]);
+  await check('variable amounts support boundaries and exact rounding with no lost stroops', async () => {
+    for (const total of [100n,25000000n,123456789n,100000000000n]) {
+      const worker = total*85n/100n;
+      await insertVariable(total.toString(),worker.toString(),(total-worker).toString());
+    }
+  });
+  await check('variable amount constraints reject invalid ranges and incorrect splits', async () => {
+    for (const total of [0n,99n,-100n,100000000001n]) {
+      const worker = total*85n/100n;
+      await assert.rejects(insertVariable(total.toString(),worker.toString(),(total-worker).toString()), /check constraint/);
+    }
+    await assert.rejects(insertVariable('25000000','1','24999999'), /check constraint/);
+    await assert.rejects(db.query('insert into public.demo_payments (customer_id,payer_address,deployment_id,split) values ($1,$2,$3,$4)', [customerId,demoPayer,demoId,{}]), /not-null/);
+  });
+  await check('saved amount cannot change even to another mathematically valid split', async () => {
+    const id = (await insertVariable('25000000','21250000','3750000')).rows[0].id;
+    await assert.rejects(db.query('update public.demo_payments set amount_stroops=30000000,worker_amount_stroops=25500000,platform_amount_stroops=4500000 where id=$1',[id]), /saved payment amount cannot be changed/);
+    assert.equal(await scalar(`select amount_stroops::text from public.demo_payments where id='${id}'`),'25000000');
+    await db.query('update public.demo_payments set updated_at=now() where id=$1',[id]);
+  });
+  await check('variable amounts retain server-only table and trigger-function access', async () => {
+    for (const role of ['anon','authenticated']) {
+      for (const privilege of ['SELECT','INSERT','UPDATE','DELETE']) assert.equal(await scalar(`select has_table_privilege('${role}','public.demo_payments','${privilege}')`),false);
+      assert.equal(await scalar(`select has_function_privilege('${role}','public.bayanihan_lock_demo_payment_amount()','EXECUTE')`),false);
+    }
   });
   console.log(`\n${passed} local PostgreSQL checks passed. No hosted Supabase project was contacted.`);
 } finally {

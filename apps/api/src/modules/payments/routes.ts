@@ -2,7 +2,8 @@ import { Router } from 'express';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Config } from '../../config/env.js';
 import { requireAuth } from '../../middleware/auth.js';
-import { PaymentError, PLATFORM, TOTAL, WORKER, publicPayment } from './model.js';
+import { PaymentError, publicPayment } from './model.js';
+import { MIN_STROOPS, MAX_STROOPS } from './amount.js';
 import { createPaymentGateway } from './gateway.js';
 import { createPaymentStore } from './store.js';
 import { createPaymentService, type PaymentService } from './service.js';
@@ -15,9 +16,9 @@ export function createPaymentRouter(config: Config, db: SupabaseClient | null, i
   router.get('/payments/config', async (_req, res) => {
     try {
       const split = await (injected?.configuration() ?? gateway.configuration());
-      res.json({ ready: true, network: 'testnet', total: TOTAL, workerAmount: WORKER, platformAmount: PLATFORM, split });
+      res.json({ ready: true, network: 'testnet', minAmount: MIN_STROOPS.toString(), maxAmount: MAX_STROOPS.toString(), split });
     } catch {
-      res.json({ ready: false, network: 'testnet', total: TOTAL, workerAmount: WORKER, platformAmount: PLATFORM, message: 'Paiflow Testnet configuration is unavailable. Check the server configuration and splitter.' });
+      res.json({ ready: false, network: 'testnet', minAmount: MIN_STROOPS.toString(), maxAmount: MAX_STROOPS.toString(), message: 'Paiflow Testnet configuration is unavailable. Check the server configuration and splitter.' });
     }
   });
   router.use(['/me', '/payments/demo'], requireAuth(db));
@@ -40,14 +41,14 @@ export function createPaymentRouter(config: Config, db: SupabaseClient | null, i
     const limit = limits.get(key) ?? { until: now + 60000, count: 0 };
     if (++limit.count > 40) throw new PaymentError(429, 'RATE_LIMITED', 'Too many payment requests. Wait a minute and check the saved payment.');
     limits.set(key, limit);
-    if (req.method !== 'GET' && req.headers.origin && req.headers.origin !== config.webOrigin) throw new PaymentError(403, 'ORIGIN_REJECTED', 'Use the configured BAYANIHAN website.');
+    if (req.method !== 'GET' && req.headers.origin && !config.webOrigins.includes(req.headers.origin)) throw new PaymentError(403, 'ORIGIN_REJECTED', 'Use the configured BAYANIHAN website.');
     res.set('Cache-Control', 'no-store');
     next();
   });
   router.get('/payments/demo', async (_req, res) => { res.json({ payment: publicPayment(await service!.current(res.locals.user.id)) }); });
   router.post('/payments/demo/prepare', async (req, res) => {
-    if (!req.body || Object.keys(req.body).some(key => key !== 'payer')) throw new PaymentError(400, 'INVALID_INPUT', 'Only the connected payer address may be supplied.');
-    res.json({ payment: publicPayment(await service!.prepare(res.locals.user.id, req.body.payer)) });
+    if (!req.body || Object.keys(req.body).some(key => !['payer', 'amountXlm'].includes(key))) throw new PaymentError(400, 'INVALID_INPUT', 'Supply only the connected payer address and payment amount in XLM.');
+    res.json({ payment: publicPayment(await service!.prepare(res.locals.user.id, req.body.payer, req.body.amountXlm)) });
   });
   router.post('/payments/demo/:id/submit', async (req, res) => {
     if (!req.body || Object.keys(req.body).some(key => key !== 'signedXdr')) throw new PaymentError(400, 'INVALID_INPUT', 'Submit only the signed original transaction.');

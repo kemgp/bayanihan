@@ -58,7 +58,7 @@ Do not append `/api` to `VITE_API_BASE_URL`: the client already supplies `/api/.
 
 ## Connect and verify
 
-1. Set Render's `WEB_ORIGIN` to the actual Vercel production origin and redeploy the API. It accepts one configured browser origin; a distinct preview URL requires its own matching configuration.
+1. Set Render's `WEB_ORIGIN` to the actual Vercel production origin and redeploy the API. It accepts only the exact origins configured in `WEB_ORIGIN`. Use a comma-separated list if a specific additional preview origin is required; no wildcards. Keep localhost origins out of production unless intentionally needed. CORS and payment request checks share this list.
 2. Set Vercel's `VITE_API_BASE_URL` to the actual Render origin and redeploy the frontend.
 3. Configure the Supabase Auth Site URL to the Vercel production URL. Add exact redirect URLs when implementing email confirmation, recovery or other redirect-based Auth flows.
 4. Load Vercel and confirm the checkout reports Paiflow connected. Verify `/api/payments/config` returns Testnet readiness without CORS errors, then sign in and confirm the current customer payment can be loaded from Supabase.

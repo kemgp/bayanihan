@@ -1,6 +1,6 @@
 # BAYANIHAN project handoff
 
-> Current update: payment-first implementation is authorized and implemented in code. The React app now presents shared sign-in, customer Freighter checkout, Paiflow submission, exact transfer verification and persistent recovery. Booking remains deferred. Follow MASTER.md and docs/payment-demo.md for current status; older planning/history below does not override them. Migration 003 and a valid Supabase server secret are required. The saved API key was still publishable at the last recheck; actual in-app signing remains unverified.
+> Current update: payment-first implementation is authorized and implemented in code. The React app now presents shared sign-in, customer Freighter checkout, Paiflow submission, exact transfer verification and persistent recovery. Booking remains deferred. Follow MASTER.md and docs/payment-demo.md for current status; older planning/history below does not override them. Migrations 003/004 and a valid Supabase server secret are required. Users can now choose 0.00001–10,000 Testnet XLM before preparation; the saved amount stays locked and exact split verification uses the stored amounts. Hosted schema metadata confirms migration 004, and an unsigned 2.5-XLM preparation passed. The user has since saved a valid server secret; the API was restarted and protected profile/payment-table reads now return HTTP 200. The local origin mismatch is also fixed: both localhost:5174 and 127.0.0.1:5174 are explicitly allowed by the same CORS/payment allowlist. Actual in-app signing remains unverified.
 
 Prepared October 25, 2026, Asia/Manila.
 
@@ -39,7 +39,7 @@ The deck's commission model is **15% of the completed job's labor charge to BAYA
 These are planning choices from the requirements, rather than capabilities already implemented or claims from the deck:
 
 - One furniture-assembly service, one worker and one service area.
-- Labor-only fixed price of **1 Stellar Testnet XLM**.
+- Labor-only Testnet payment with a user-editable amount; 1 XLM is the initial value.
 - A short list of fixed, non-overlapping appointment slots.
 - Pre-created Supabase Auth accounts for a customer and worker, using one shared login screen. Supabase handles authentication; protected profile roles determine the experience after sign-in. Users do not select their authorization role at login.
 - Minimal views: login, service/profile with booking form, role-aware bookings, and checkout/receipt within booking detail.
@@ -130,7 +130,7 @@ The root `seed.sql` remains intentionally empty. [Database notes](supabase/READM
 - Payment is separate from job status. A completed job may be unpaid or pending. Checkout becomes available after customer confirmation.
 - Payment states include preparing, prepared, submitted, pending, paid and failed. Preserve original recovery evidence through uncertain outcomes.
 - Configure an existing Paiflow **On Receive native XLM → Split** deployment on Stellar Testnet. Use distinct customer, worker and platform wallets. Bind the approved deployment UUID and worker mapping on the server.
-- For the 1-XLM demo, expected amounts are total `10000000`, worker `8500000` and platform `1500000` stroops. Use integer storage and string serialization across APIs.
+- For standalone demo checkout, validate the selected decimal amount and save the exact stroop total plus worker=floor(total×85/100) and platform=remainder. Use those immutable values for XDR checks, receipts and recovery. A 1-XLM selection yields `10000000`/`8500000`/`1500000` stroops as one example.
 - Derive price, recipients, asset, network and deployment from trusted records. Client-supplied payment fields cannot override them.
 - Persist the preparation before signing, validate the signed transaction against that original preparation, and persist the original signed envelope/hash before submission.
 - Mark paid only after confirming the original transaction and matching payer, deployment, asset, amount and both transfers. HTTP success or a submitted hash alone is insufficient.
