@@ -55,6 +55,8 @@ export function App() {
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [notice, setNotice] = useState('');
   const lock = useRef(false);
   const servicesRef = useRef<HTMLElement>(null);
@@ -189,7 +191,33 @@ export function App() {
       const result = await supabase.auth.signInWithPassword({ email, password });
       setPassword('');
       if (result.error) throw new Error('Sign-in failed. Check the demo account email and password.');
+      setAuthMode('signin');
       setView('services');
+    });
+  }
+  async function signUp(event: FormEvent) {
+    event.preventDefault();
+    const name = displayName.trim();
+    if (name.length < 1 || name.length > 120) {
+      setError('Enter a name between 1 and 120 characters.');
+      return;
+    }
+    await run('Creating account…', async () => {
+      if (!supabase) throw new Error('Configure the browser Supabase settings first.');
+      const result = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { data: { display_name: name } },
+      });
+      setPassword('');
+      if (result.error) throw new Error('Account creation failed. Check your email, password and Supabase Auth settings.');
+      if (result.data.session) {
+        setAuthMode('signin');
+        setView('services');
+        setNotice('Your customer account is ready.');
+      } else {
+        setNotice('If registration succeeds, check your inbox for a confirmation link. Already have an account? Sign in instead.');
+      }
     });
   }
   async function submitBooking(event: FormEvent) {
@@ -340,12 +368,14 @@ export function App() {
         </div>
         <ol className="steps">{['Connect wallet', 'Sign payment', 'Verify split'].map((step, i) => <li className={steps[i]} key={step}><span>{steps[i] === 'done' ? <Check /> : i + 1}</span>{step}</li>)}</ol>
         <div className="checkout-action">
-          {restoring ? <p className="muted" role="status">Restoring your session…</p> : !session ? <form onSubmit={login} className="login-form">
-            <h3>Sign in to the demo</h3><p>Use your pre-created customer account to save the payment and receipt.</p>
-            <label htmlFor="email">Email address</label><input id="email" type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} disabled={!!busy} />
-            <label htmlFor="password">Password</label><input id="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} disabled={!!busy} />
-            <button className="primary-button" disabled={!!busy || !supabase}>{busy || 'Sign in to continue'}<span aria-hidden="true">↗</span></button>
-            {!supabase && <p className="error">Supabase browser configuration is missing.</p>}
+          {restoring ? <p className="muted" role="status">Restoring your session…</p> : !session ? <form onSubmit={authMode === 'signup' ? signUp : login} className="login-form">
+            <h3>{authMode === 'signup' ? 'Create your account' : 'Sign in to the demo'}</h3><p>{authMode === 'signup' ? 'Join BAYANIHAN as a customer. Worker access is assigned separately.' : 'Sign in to request a service and save your payment receipt.'}</p>
+            {authMode === 'signup' && <><label htmlFor="display-name">Your name</label><input id="display-name" type="text" autoComplete="name" minLength={1} maxLength={120} required value={displayName} onChange={e => setDisplayName(e.target.value)} disabled={!!busy} /></>}
+            <label htmlFor="email">Email address</label><input id="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} disabled={!!busy} />
+            <label htmlFor="password">Password</label><input id="password" type="password" autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} minLength={authMode === 'signup' ? 8 : undefined} required value={password} onChange={e => setPassword(e.target.value)} disabled={!!busy} />
+            <button className="primary-button" disabled={!!busy || !supabase}>{busy || (authMode === 'signup' ? 'Create account' : 'Sign in to continue')}<span aria-hidden="true">↗</span></button>
+            <p className="auth-switch">{authMode === 'signup' ? 'Already have an account?' : 'New to BAYANIHAN?'} <button type="button" className="text-button" disabled={!!busy} onClick={() => { setAuthMode(authMode === 'signup' ? 'signin' : 'signup'); setPassword(''); setError(''); setNotice(''); }}>{authMode === 'signup' ? 'Sign in' : 'Sign up'}</button></p>
+            {!supabase && <p className="error">Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> for the web app, then restart or redeploy it.</p>}
           </form> : !profile ? <p className="muted">{error ? 'Account could not be loaded.' : 'Loading your account…'}</p> : profile.role !== 'customer' ? <div className="state-panel"><h3>Customer checkout</h3><p>Signed in as {profile.display_name}, a worker. Sign out and use the customer account to demonstrate payment.</p></div> : <>
             <div className="account-line"><span>Customer</span><strong>{profile.display_name}</strong></div>
             {!loaded && <button className="secondary-button" disabled={!!busy} onClick={() => run('Loading…', async () => { const result = await paymentRequest(token!); acceptPayment(result.payment); setLoaded(true); })}>{busy || 'Load saved checkout'}</button>}

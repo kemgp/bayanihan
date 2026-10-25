@@ -1,6 +1,6 @@
 # Shared authentication: setup and implementation guide
 
-This explains steps 3–5 from the earlier conversation. Shared sign-in, session restore/local sign-out and protected `/api/me` have since been implemented for the payment-first increment in `App.tsx` and `modules/payments/routes.ts`. The customer sees checkout and the worker sees a customer-account notice. The marketplace views below remain future work. See [payment demo guide](payment-demo.md) for current setup and behavior.
+This guide records the Supabase authentication setup. The app now supports shared email/password sign-in and customer sign-up in `apps/web/src/App.tsx`, session restore/local sign-out and protected `/api/me`. Sign-up sends the display name as Auth metadata; migration `20261025000200_auth_profiles.sql` creates the profile with the safe `customer` role. No role picker is exposed. Worker accounts/roles remain separately provisioned. See [payment demo guide](payment-demo.md) for current setup and behavior.
 
 ## First, prepare the two accounts
 
@@ -11,15 +11,19 @@ Apply migrations in order to the development Supabase project:
 
 The second migration creates profiles for existing and newly created Auth users, with `customer` as the safe default. Existing profiles and assigned roles are preserved. User-editable metadata can provide a display name, but cannot grant the worker role. The profile trigger runs with an empty search path and is not callable by browser roles. Browser table access remains revoked. This follows Supabase's [Auth profile trigger approach](https://supabase.com/docs/guides/auth/managing-user-data).
 
-In Supabase Dashboard → Authentication → Users, create two email/password users and confirm their email addresses for the demo. Keep their passwords outside source control. Copy their Auth user UUIDs.
+Create the customer account through the app's Sign up form. Supabase creates its customer profile through the auth trigger. Create the worker email/password account in Supabase Dashboard → Authentication → Users, and confirm email addresses as required by the project's Auth settings. Keep passwords outside source control. Copy both Auth user UUIDs.
 
 Open `supabase/seeds/demo_profiles.sql`, copy it into the development project's SQL Editor, and replace only the two UUID declaration values with those actual IDs. Run the edited copy. It assigns Ana Cruz as `customer` and Miguel Santos as `worker`. You may change those display names in the SQL Editor as needed. The script fails if the placeholders remain, the IDs are equal, either email account is missing, or the proposed customer already has a worker business record. It can be rerun with the same IDs. If a failed manual SQL run leaves a transaction open, issue `ROLLBACK` before retrying the corrected script.
 
 Auth users/passwords belong to Supabase Auth, so neither migration inserts directly into `auth.users`. The seed assigns application profiles only. It does not create the separate `workers` record, wallet/deployment mapping or service.
 
-## Step 3: shared sign-in screen
+## Sign-in and customer sign-up
 
-Build `apps/web/src/features/auth/LoginPage.tsx` with email, password, one Sign in button, loading state and a generic error message. Use the existing browser client exported by `apps/web/src/lib/supabase.ts`.
+The shared account form is in `apps/web/src/App.tsx`; it uses the browser client exported by `apps/web/src/lib/supabase.ts`. Sign-in calls `signInWithPassword`. Sign-up calls `signUp` with the trimmed display name in `options.data.display_name`. Passwords go directly to Supabase Auth. If email confirmation is enabled and sign-up returns no session, the form explains that the user should check their inbox. Configure the Auth Site URL and redirect allowlist in Supabase for the deployed frontend.
+
+New accounts are always customers. Never add a customer/worker role selector to the public form. The profile trigger ignores role metadata and safely defaults to `customer`; worker role assignment happens through the trusted development seed/admin path.
+
+For sign-in, use the existing browser client exported by `apps/web/src/lib/supabase.ts`:
 
 The submit handler should prevent default form submission and call:
 

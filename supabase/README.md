@@ -13,7 +13,7 @@ For an empty **development** Supabase project, review and run the migration in t
 
 Development seed sequence:
 
-1. After applying the first two migrations, create two email/password users in Supabase Auth and confirm them for the demo. Their profiles are created automatically with `customer` as the default role.
+1. After applying the first two migrations, create the customer account through the app's Sign up form (or create both accounts in Supabase Auth for a controlled demo). Create the worker account separately and confirm email addresses as required by Auth settings. Their profiles are created with `customer` as the default role.
 2. Copy `seeds/demo_profiles.sql` into the development SQL Editor. Replace its two UUID declaration placeholders with the actual Auth user IDs and run that copy. It assigns the customer and worker roles without storing passwords. Use dedicated demo accounts: reruns intentionally restore their demo display names and roles. Do not edit the placeholder guard conditions. The seed remains separate from the migration chain because account IDs are project-specific.
 3. Later, insert the separate worker business record with its actual testnet payout address and reviewed Paiflow deployment UUID.
 4. Insert the furniture-assembly service at `10000000` stroops. Enable it only when its worker/deployment is ready.

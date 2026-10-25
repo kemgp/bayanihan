@@ -25,7 +25,7 @@ The supplied pitch deck identifies trust concerns, slow access to help, inconsis
 | Frontend | React.js with Vite, ordinary CSS or an existing component library |
 | Backend | Express.js on Node.js, ESM modules |
 | Database | PostgreSQL hosted by Supabase |
-| Authentication | One shared login screen backed by Supabase Auth; pre-created customer and worker accounts for the MVP |
+| Authentication | Shared Supabase Auth sign-in and customer sign-up; worker role remains provisioned separately |
 | Wallet | Freighter browser extension through `@stellar/freighter-api` |
 | Payments | `@paiflow/sdk@0.2.0` on the Express server, Stellar SDK for envelope checks |
 | Runtime | Node `>=22.22.2 <23`, as required by the checked Paiflow SDK documentation |
@@ -56,7 +56,7 @@ The following table describes the complete marketplace target. For the current p
 
 Use four simple views: login, service/profile with booking form, role-specific booking list/detail, and checkout/receipt. Avoid separate pages for every step. Provide loading, empty and error states, readable contrast, labeled fields and a layout that remains usable at 390px and desktop widths. The payment demonstration targets a desktop browser with Freighter installed.
 
-The user confirmed one shared login screen with Supabase handling authentication. React submits credentials directly through the Supabase browser SDK (`signInWithPassword`); Supabase manages passwords and sessions. Send the session access token to Express as a bearer token for protected application requests. Express verifies identity and enforces role/ownership permissions using trusted records. Show a loading state while restoring the session and resolving the profile; a missing or invalid profile must not grant access. Use the existing pre-created-account MVP approach; public onboarding remains deferred. Connect Freighter during checkout, after application sign-in. [Supabase password sign-in](https://supabase.com/docs/reference/javascript/auth-signinwithpassword), [server user verification](https://supabase.com/docs/reference/javascript/auth-getuser).
+The shared account form supports Supabase email/password sign-in and customer sign-up. Sign-up accepts a display name and submits it as Auth metadata; the profile trigger provisions the protected profile with the safe `customer` role. The UI has no role selector. Worker accounts and worker role assignment remain separately provisioned. Supabase may require email confirmation before creating a session; show a clear confirmation message and rely on Supabase's configured Site URL/redirect allowlist. Send the session access token to Express as a bearer token for protected application requests. Express verifies identity and enforces role/ownership permissions using trusted records. A missing or invalid profile must not grant access. Connect Freighter during checkout, after application sign-in. [Supabase sign-up](https://supabase.com/docs/reference/javascript/auth-signup), [password sign-in](https://supabase.com/docs/reference/javascript/auth-signinwithpassword), [server user verification](https://supabase.com/docs/reference/javascript/auth-getuser).
 
 ## 4. Booking and payment rules
 

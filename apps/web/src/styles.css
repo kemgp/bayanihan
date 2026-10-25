@@ -481,6 +481,19 @@ h2 {
   line-height: 1.8;
 }
 
+.login-form .auth-switch {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+  margin: 4px 0 0;
+}
+
+.login-form .auth-switch .text-button {
+  color: #1663c7;
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .login-form label {
   margin-bottom: 7px;
   font-size: 10px;
